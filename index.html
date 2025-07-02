@@ -2,26 +2,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Landing</title>
+    <title>Om Nom Stories</title>
     <style>
         :root {
-            --primary: #2563eb;    /* Синий акцент */
-            --secondary: #4f46e5;  /* Индиго */
-            --dark: #1e293b;       /* Темно-серый */
-            --light: #f8fafc;      /* Светлый фон */
-            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+            --primary: #4CAF50;    /* Основной зеленый */
+            --secondary: #8BC34A;  /* Светло-зеленый */
+            --accent: #FFC107;     /* Желтый для акцентов */
+            --dark: #2E7D32;       /* Темно-зеленый */
+            --light: #F1F8E9;      /* Светлый фон */
             
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Comic Neue', cursive, sans-serif;
             line-height: 1.6;
-            color-scheme: light dark;
-        }
-
-        /* Темная тема */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --dark: #0f172a;
-                --light: #1e293b;
-            }
         }
 
         * {
@@ -36,15 +27,27 @@
         }
 
         .hero {
-            padding: 8rem 2rem;
-            background: var(--gradient);
+            padding: 6rem 2rem;
+            background: linear-gradient(160deg, var(--primary), var(--secondary));
             color: white;
             text-align: center;
-            clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="%23FFC107"/></svg>') repeat-x;
+            transform: rotate(3deg);
         }
 
         .container {
-            max-width: 1280px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 1.5rem;
         }
@@ -52,55 +55,85 @@
         .grid {
             display: grid;
             gap: 2rem;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             padding: 4rem 0;
         }
 
         .card {
             background: white;
             padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(76, 175, 80, 0.1);
             transition: transform 0.3s ease;
+            border: 3px solid var(--accent);
         }
 
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px) rotate(2deg);
+        }
+
+        .character {
+            width: 150px;
+            height: 150px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .character::before {
+            content: 'Om Nom';
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: var(--dark);
         }
 
         .button {
             display: inline-block;
             padding: 1rem 2rem;
-            background: var(--gradient);
-            color: white;
+            background: var(--accent);
+            color: var(--dark);
             text-decoration: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: opacity 0.3s;
+            border-radius: 30px;
+            font-weight: 700;
+            transition: transform 0.3s;
+            border: 2px solid var(--dark);
         }
 
         .button:hover {
-            opacity: 0.9;
+            transform: scale(1.05);
         }
 
         nav {
-            padding: 1.5rem 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
             position: sticky;
             top: 0;
+            border-bottom: 3px solid var(--accent);
         }
 
         .nav-links {
             display: flex;
             gap: 2rem;
-            justify-content: flex-end;
+            justify-content: center;
         }
 
         .nav-links a {
             color: var(--dark);
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: var(--secondary);
+            color: white;
         }
 
         @media (max-width: 768px) {
@@ -111,43 +144,49 @@
             .hero {
                 padding: 4rem 1rem;
             }
+            
+            .nav-links {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
-    <!-- Подключение шрифта Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav>
         <div class="container">
             <div class="nav-links">
-                <a href="#features">Возможности</a>
-                <a href="#about">О нас</a>
-                <a href="#contact">Контакты</a>
+                <a href="#about">Об игре</a>
+                <a href="#characters">Персонажи</a>
+                <a href="#levels">Уровни</a>
+                <a href="#download">Скачать</a>
             </div>
         </div>
     </nav>
 
     <section class="hero">
         <div class="container">
-            <h1>Современные цифровые решения</h1>
-            <p>Превращаем идеи в рабочие продукты</p>
-            <a href="#" class="button">Начать проект</a>
+            <div class="character"></div>
+            <h1>Om Nom Stories</h1>
+            <p>Новые приключения любимого монстрика!</p>
+            <a href="#download" class="button">Играть сейчас!</a>
         </div>
     </section>
 
     <section class="container" id="features">
         <div class="grid">
             <div class="card">
-                <h3>Адаптивный дизайн</h3>
-                <p>Автоматическая подстройка под любые экраны</p>
+                <h3>🎮 100+ уровней</h3>
+                <p>Увлекательные головоломки с новыми механиками</p>
             </div>
             <div class="card">
-                <h3>Высокая скорость</h3>
-                <p>Оптимизация производительности</p>
+                <h3>🌟 Новые костюмы</h3>
+                <p>Собирай бонусы и меняй внешность Om Nom</p>
             </div>
             <div class="card">
-                <h3>Безопасность</h3>
-                <p>Защита данных по стандартам ISO</p>
+                <h3>🏆 Ежедневные награды</h3>
+                <p>Зарабатывай звёзды и открывай секретные уровни</p>
             </div>
         </div>
     </section>

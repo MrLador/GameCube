@@ -6,29 +6,38 @@
   <title>Игры: Пинпонг и Сапёр с палитрами</title>
   <style>
     :root {
-      --bg-color: #000;
-      --text-color: #fff;
+      --bg-color: #000000;
+      --text-color: #ffffff;
       --btn-bg: #0a84ff;
       --btn-bg-hover: #0066cc;
-      --game-bg: #222;
-      --paddle-color: #fff;
-      --ball-color: #fff;
-      --net-color: #fff;
-      --rating-bg: #111;
-      --rating-border: #fff;
-      --ms-cell-bg: #555;
-      --ms-cell-revealed-bg: #bbb;
+      --game-bg: #222222;
+      --paddle-color: #ffffff;
+      --ball-color: #ffffff;
+      --net-color: #ffffff;
+      --rating-bg: #111111;
+      --rating-border: #ffffff;
+      --ms-cell-bg: #555555;
+      --ms-cell-revealed-bg: #bbbbbb;
       --ms-cell-flag-color: #f00;
       --ms-cell-text-color: black;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --transition-speed: 0.3s;
+    }
+    /* Сброс и базовые стили */
+    * {
+      box-sizing: border-box;
     }
     body {
       margin: 0;
       background: var(--bg-color);
       color: var(--text-color);
-      font-family: Arial, sans-serif;
+      font-family: var(--font-family);
       user-select: none;
       height: 100vh;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background var(--transition-speed), color var(--transition-speed);
     }
     /* Центрирование меню */
     #menu {
@@ -40,41 +49,67 @@
       align-items: center;
       background: var(--game-bg);
       z-index: 1000;
+      padding: 20px;
+      transition: background var(--transition-speed);
     }
     #menu h1 {
-      font-size: 48px;
+      font-size: 3.5rem;
       margin-bottom: 40px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px rgba(10, 132, 255, 0.7);
     }
     #menu button {
-      font-size: 24px;
-      padding: 15px 40px;
+      font-size: 1.5rem;
+      padding: 15px 50px;
       margin: 15px;
-      border-radius: 8px;
+      border-radius: 12px;
       border: none;
       cursor: pointer;
       background: var(--btn-bg);
       color: var(--text-color);
-      transition: background 0.3s;
+      box-shadow: 0 4px 15px rgba(10, 132, 255, 0.5);
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
       user-select: none;
+      font-weight: 600;
+      letter-spacing: 1px;
+      min-width: 220px;
+      text-align: center;
     }
-    #menu button:hover {
+    #menu button:hover, #menu button:focus {
       background: var(--btn-bg-hover);
+      box-shadow: 0 6px 20px rgba(0, 102, 204, 0.7);
+      outline: none;
     }
     #settings {
-      margin-top: 30px;
+      margin-top: 40px;
       text-align: center;
       color: var(--text-color);
+      font-size: 1.1rem;
+      user-select: none;
     }
     #settings label {
-      margin-right: 10px;
-      font-size: 18px;
+      margin-right: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     #settings select {
-      font-size: 18px;
-      padding: 5px 10px;
-      border-radius: 6px;
+      font-size: 1.1rem;
+      padding: 8px 14px;
+      border-radius: 10px;
       border: none;
       cursor: pointer;
+      background: var(--btn-bg);
+      color: var(--text-color);
+      box-shadow: 0 3px 10px rgba(10, 132, 255, 0.5);
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
+      min-width: 180px;
+      font-weight: 600;
+    }
+    #settings select:hover, #settings select:focus {
+      background: var(--btn-bg-hover);
+      box-shadow: 0 5px 15px rgba(0, 102, 204, 0.7);
+      outline: none;
     }
 
     /* Общие стили для игр */
@@ -88,6 +123,8 @@
       justify-content: center;
       height: 100vh;
       overflow: hidden;
+      padding: 20px;
+      transition: background var(--transition-speed);
     }
 
     /* Пинпонг */
@@ -96,6 +133,10 @@
       flex-grow: 1;
       flex-direction: row;
       overflow: hidden;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
     }
     #game-container {
       position: relative;
@@ -105,97 +146,141 @@
       align-items: center;
       justify-content: center;
       background: var(--game-bg);
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(10, 132, 255, 0.6);
+      padding: 20px;
+      user-select: none;
     }
     canvas {
       background: var(--game-bg);
-      border: 2px solid var(--rating-border);
+      border: 3px solid var(--rating-border);
+      border-radius: 16px;
       display: block;
       touch-action: none;
+      box-shadow: 0 0 20px rgba(10, 132, 255, 0.8);
+      transition: border-color var(--transition-speed);
     }
     #score {
-      font-size: 24px;
-      margin: 10px 0;
-      letter-spacing: 10px;
+      font-size: 2rem;
+      margin: 15px 0;
+      letter-spacing: 12px;
       user-select: none;
       color: var(--text-color);
+      font-weight: 700;
+      text-shadow: 0 0 6px rgba(10, 132, 255, 0.8);
     }
     #pause-btn, #mode-btn, #pong-back-btn {
       position: absolute;
-      background: #444;
+      background: #222a44;
       border: none;
       color: var(--text-color);
-      font-size: 16px;
-      padding: 6px 12px;
+      font-size: 1rem;
+      padding: 8px 16px;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 10px;
       user-select: none;
       z-index: 10;
-      transition: background 0.3s;
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
+      box-shadow: 0 0 8px rgba(10, 132, 255, 0.6);
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
-    #pause-btn:hover, #mode-btn:hover, #pong-back-btn:hover {
-      background: #666;
+    #pause-btn:hover, #mode-btn:hover, #pong-back-btn:hover,
+    #pause-btn:focus, #mode-btn:focus, #pong-back-btn:focus {
+      background: #1a2240;
+      box-shadow: 0 0 15px rgba(0, 102, 204, 0.9);
+      outline: none;
     }
     #pause-btn {
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 12px;
     }
     #mode-btn {
-      top: 10px;
-      left: 100px;
+      top: 12px;
+      left: 120px;
     }
     #pong-back-btn {
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 12px;
     }
     #nickname-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.9);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 20;
+      border-radius: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      user-select: none;
     }
     #nickname-overlay input {
-      font-size: 20px;
-      padding: 10px;
-      border-radius: 6px;
+      font-size: 1.3rem;
+      padding: 14px 20px;
+      border-radius: 12px;
       border: none;
-      width: 250px;
-      margin-bottom: 15px;
+      width: 280px;
+      margin-bottom: 20px;
       text-align: center;
       color: var(--text-color);
-      background: #222;
+      background: #222a44;
+      box-shadow: inset 0 0 8px rgba(10, 132, 255, 0.7);
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
+      font-weight: 600;
+    }
+    #nickname-overlay input::placeholder {
+      color: #a0a0a0;
+    }
+    #nickname-overlay input:focus {
+      background: #1a2240;
+      box-shadow: inset 0 0 12px rgba(0, 102, 204, 0.9);
+      outline: none;
     }
     #nickname-overlay button {
-      font-size: 18px;
-      padding: 10px 20px;
-      border-radius: 6px;
+      font-size: 1.2rem;
+      padding: 14px 40px;
+      border-radius: 12px;
       border: none;
       background: var(--btn-bg);
       color: var(--text-color);
       cursor: pointer;
       user-select: none;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(10, 132, 255, 0.8);
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
     }
-    #nickname-overlay button:hover {
+    #nickname-overlay button:hover, #nickname-overlay button:focus {
       background: var(--btn-bg-hover);
+      box-shadow: 0 0 25px rgba(0, 102, 204, 1);
+      outline: none;
     }
     #rating {
-      width: 300px;
+      width: 320px;
       background: var(--rating-bg);
-      border-left: 2px solid var(--rating-border);
-      padding: 20px;
+      border-left: 3px solid var(--rating-border);
+      padding: 25px 20px;
       box-sizing: border-box;
       overflow-y: auto;
       color: var(--text-color);
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 0 20px 20px 0;
+      box-shadow: inset 0 0 15px rgba(10, 132, 255, 0.5);
+      user-select: none;
     }
     #rating h2 {
       margin-top: 0;
       text-align: center;
-      font-weight: normal;
+      font-weight: 700;
       border-bottom: 1px solid #555;
-      padding-bottom: 10px;
+      padding-bottom: 12px;
+      letter-spacing: 1px;
+      font-size: 1.3rem;
+      text-shadow: 0 0 6px rgba(10, 132, 255, 0.7);
     }
     #rating table {
       width: 100%;
@@ -203,12 +288,15 @@
       color: var(--text-color);
     }
     #rating th, #rating td {
-      padding: 8px 6px;
+      padding: 10px 8px;
       border-bottom: 1px solid #444;
       text-align: center;
+      transition: background var(--transition-speed);
     }
     #rating th {
       background: #333;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
     #rating tbody tr:hover {
       background: #222;
@@ -227,81 +315,106 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 20px;
+      padding: 30px 20px;
       flex-grow: 1;
       overflow-y: auto;
       background: var(--game-bg);
       width: 100%;
       box-sizing: border-box;
       color: var(--text-color);
+      max-width: 480px;
+      margin: 0 auto;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(10, 132, 255, 0.6);
+      user-select: none;
+      transition: background var(--transition-speed);
     }
     #ms-header {
       width: 100%;
-      max-width: 400px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
-    }
-    #ms-header button {
-      background: #444;
-      border: none;
-      color: var(--text-color);
-      font-size: 16px;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 4px;
-      user-select: none;
-      transition: background 0.3s;
-    }
-    #ms-header button:hover {
-      background: #666;
+      margin-bottom: 20px;
     }
     #ms-status {
-      font-size: 18px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 6px rgba(10, 132, 255, 0.7);
+    }
+    #ms-header button {
+      background: #222a44;
+      border: none;
+      color: var(--text-color);
+      font-size: 1rem;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 12px;
       user-select: none;
+      transition: background var(--transition-speed), box-shadow var(--transition-speed);
+      box-shadow: 0 0 10px rgba(10, 132, 255, 0.6);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      min-width: 110px;
+    }
+    #ms-header button:hover, #ms-header button:focus {
+      background: #1a2240;
+      box-shadow: 0 0 20px rgba(0, 102, 204, 0.9);
+      outline: none;
     }
     #ms-board {
       display: grid;
-      grid-template-columns: repeat(9, 40px);
-      grid-template-rows: repeat(9, 40px);
-      gap: 2px;
+      grid-template-columns: repeat(9, 44px);
+      grid-template-rows: repeat(9, 44px);
+      gap: 4px;
       background: #333;
-      border: 2px solid var(--rating-border);
+      border: 3px solid var(--rating-border);
+      border-radius: 16px;
       user-select: none;
+      box-shadow: inset 0 0 20px rgba(10, 132, 255, 0.7);
+      transition: border-color var(--transition-speed);
     }
     .ms-cell {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: var(--ms-cell-bg);
-      border-radius: 4px;
+      border-radius: 10px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-weight: bold;
-      font-size: 20px;
+      font-weight: 700;
+      font-size: 22px;
       cursor: pointer;
       color: var(--text-color);
       user-select: none;
       position: relative;
-      transition: background 0.3s, color 0.3s;
+      transition: background var(--transition-speed), color var(--transition-speed);
+      box-shadow: 0 0 6px rgba(10, 132, 255, 0.4);
     }
     .ms-cell.revealed {
       background: var(--ms-cell-revealed-bg);
       color: var(--ms-cell-text-color);
       cursor: default;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
     }
     .ms-cell.flagged::after {
       content: "🚩";
       position: absolute;
-      font-size: 20px;
+      font-size: 22px;
       top: 2px;
-      right: 2px;
+      right: 4px;
       color: var(--ms-cell-flag-color);
+      text-shadow: 0 0 4px rgba(255,0,0,0.8);
     }
     .ms-cell.mine {
-      background: #f00;
+      background: #f44336;
       color: black;
+      box-shadow: inset 0 0 12px #b71c1c;
+    }
+
+    /* Плавные переходы для всех элементов */
+    button, select, input, .ms-cell, #nickname-overlay, #game-container, #minesweeper-container {
+      transition: background var(--transition-speed), color var(--transition-speed), box-shadow var(--transition-speed);
     }
   </style>
 </head>
@@ -309,37 +422,43 @@
   <!-- Меню выбора игры -->
   <div id="menu">
     <h1>Выберите игру</h1>
-    <button id="btn-pong">Пинпонг</button>
-    <button id="btn-minesweeper">Сапёр</button>
+    <button id="btn-pong" type="button">Пинпонг</button>
+    <button id="btn-minesweeper" type="button">Сапёр</button>
 
-    <div id="settings">
+    <div id="settings" aria-label="Настройки цветовой палитры">
       <label for="palette-select">Цветовая палитра:</label>
-      <select id="palette-select" title="Выберите цветовую палитру">
+      <select id="palette-select" title="Выберите цветовую палитру" aria-describedby="palette-desc">
+        <option value="random">Случайный (по умолчанию)</option>
         <option value="default">Классическая</option>
         <option value="sunset">Закат</option>
         <option value="ocean">Океан</option>
         <option value="forest">Лес</option>
         <option value="neon">Неон</option>
       </select>
+      <div id="palette-desc" style="font-size:0.9rem; margin-top:6px; color:#aaa;">
+        Выберите цветовую палитру для интерфейса и игр.
+      </div>
     </div>
   </div>
 
   <!-- Пинпонг -->
-  <div id="pong-container" class="game-wrapper">
+  <div id="pong-container" class="game-wrapper" role="main" aria-label="Игра Пинпонг">
     <div id="game-container">
-      <button id="pause-btn" title="Пауза">Пауза</button>
-      <button id="mode-btn" title="Переключить режим">Режим: ПК</button>
-      <button id="pong-back-btn" title="Вернуться в меню">Меню</button>
-      <div id="score">0 : 0</div>
-      <canvas id="pong" width="800" height="500"></canvas>
+      <button id="pause-btn" title="Пауза" type="button" aria-pressed="false">Пауза</button>
+      <button id="mode-btn" title="Переключить режим" type="button">Режим: ПК</button>
+      <button id="pong-back-btn" title="Вернуться в меню" type="button">Меню</button>
+      <div id="score" aria-live="polite" aria-atomic="true">0 : 0</div>
+      <canvas id="pong" width="800" height="500" aria-label="Игровое поле Пинпонг"></canvas>
 
-      <div id="nickname-overlay">
-        <input type="text" id="nickname-input" placeholder="Введите ваш ник" maxlength="15" />
-        <button id="start-btn">Начать игру</button>
+      <div id="nickname-overlay" role="dialog" aria-modal="true" aria-labelledby="nickname-label" style="display:flex;">
+        <input type="text" id="nickname-input" placeholder="Введите ваш ник" maxlength="15" aria-describedby="nickname-desc" />
+        <div id="nickname-label" style="position:absolute; left:-9999px;">Введите ник игрока</div>
+        <div id="nickname-desc" style="position:absolute; left:-9999px;">Введите ник для рейтинга</div>
+        <button id="start-btn" type="button">Начать игру</button>
       </div>
     </div>
 
-    <div id="rating">
+    <div id="rating" aria-label="Рейтинг игроков">
       <h2>Рейтинг игроков</h2>
       <table>
         <thead>
@@ -353,13 +472,13 @@
   </div>
 
   <!-- Сапёр -->
-  <div id="minesweeper-container" class="game-wrapper">
+  <div id="minesweeper-container" class="game-wrapper" role="main" aria-label="Игра Сапёр">
     <div id="ms-header">
-      <div id="ms-status">Мин: 10</div>
-      <button id="ms-reset-btn">Новая игра</button>
-      <button id="ms-back-btn">Меню</button>
+      <div id="ms-status" aria-live="polite" aria-atomic="true">Мин: 10</div>
+      <button id="ms-reset-btn" type="button">Новая игра</button>
+      <button id="ms-back-btn" type="button">Меню</button>
     </div>
-    <div id="ms-board"></div>
+    <div id="ms-board" role="grid" aria-label="Игровое поле Сапёр"></div>
   </div>
 
   <script>
@@ -460,18 +579,46 @@
     }
     function loadPalette() {
       const saved = localStorage.getItem('selectedPalette');
-      if (saved && palettes[saved]) {
+      if (saved && (saved === 'random' || palettes[saved])) {
         return saved;
       }
-      return 'default';
+      return 'random';
     }
 
-    paletteSelect.value = loadPalette();
-    applyPalette(paletteSelect.value);
+    // При выборе "random" выбираем случайную палитру из остальных
+    function getRandomPalette(exclude = ['random']) {
+      const keys = Object.keys(palettes).filter(k => !exclude.includes(k));
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    function applySelectedPalette(name) {
+      if (name === 'random') {
+        const randomPal = getRandomPalette();
+        applyPalette(randomPal);
+        return randomPal;
+      } else {
+        applyPalette(name);
+        return name;
+      }
+    }
+
+    // Инициализация палитры при загрузке
+    let currentPalette = loadPalette();
+    paletteSelect.value = currentPalette;
+    if (currentPalette === 'random') {
+      currentPalette = applySelectedPalette('random');
+    } else {
+      applyPalette(currentPalette);
+    }
 
     paletteSelect.addEventListener('change', () => {
       const val = paletteSelect.value;
-      applyPalette(val);
+      if (val === 'random') {
+        currentPalette = applySelectedPalette('random');
+      } else {
+        currentPalette = val;
+        applyPalette(val);
+      }
       savePalette(val);
     });
 
@@ -633,6 +780,7 @@
         if (!gameStarted) return;
         isPaused = !isPaused;
         pauseBtn.textContent = isPaused ? 'Продолжить' : 'Пауза';
+        pauseBtn.setAttribute('aria-pressed', isPaused.toString());
       });
 
       modeBtn.addEventListener('click', () => {
@@ -657,7 +805,6 @@
         gameLoop();
       });
 
-      // Кнопка выхода в меню
       pongBackBtn.addEventListener('click', () => {
         gameStarted = false;
         isPaused = false;
@@ -705,6 +852,7 @@
         resetBall(1);
         isPaused = false;
         pauseBtn.textContent = 'Пауза';
+        pauseBtn.setAttribute('aria-pressed', 'false');
       }
 
       function updateScore() {
@@ -877,8 +1025,8 @@
         msStatus.textContent = `Мин: ${mineCount}`;
         board = [];
         msBoard.innerHTML = '';
-        msBoard.style.gridTemplateColumns = `repeat(${boardSize}, 40px)`;
-        msBoard.style.gridTemplateRows = `repeat(${boardSize}, 40px)`;
+        msBoard.style.gridTemplateColumns = `repeat(${boardSize}, 44px)`;
+        msBoard.style.gridTemplateRows = `repeat(${boardSize}, 44px)`;
 
         for(let i=0; i<boardSize; i++) {
           board[i] = [];
@@ -894,6 +1042,7 @@
             cell.classList.add('ms-cell');
             cell.dataset.row = i;
             cell.dataset.col = j;
+            cell.setAttribute('role', 'gridcell');
             msBoard.appendChild(cell);
             board[i][j].element = cell;
           }

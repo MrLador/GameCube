@@ -3,12 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Игры: Пинпонг и Сапёр</title>
+  <title>Игры: Пинпонг и Сапёр с палитрами</title>
   <style>
+    :root {
+      --bg-color: #000;
+      --text-color: #fff;
+      --btn-bg: #0a84ff;
+      --btn-bg-hover: #0066cc;
+      --game-bg: #222;
+      --paddle-color: #fff;
+      --ball-color: #fff;
+      --net-color: #fff;
+      --rating-bg: #111;
+      --rating-border: #fff;
+      --ms-cell-bg: #555;
+      --ms-cell-revealed-bg: #bbb;
+      --ms-cell-flag-color: #f00;
+      --ms-cell-text-color: black;
+    }
     body {
       margin: 0;
-      background: #000;
-      color: #fff;
+      background: var(--bg-color);
+      color: var(--text-color);
       font-family: Arial, sans-serif;
       user-select: none;
       display: flex;
@@ -21,7 +37,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      background: #111;
+      background: var(--game-bg);
     }
     #menu h1 {
       font-size: 48px;
@@ -34,20 +50,36 @@
       border-radius: 8px;
       border: none;
       cursor: pointer;
-      background: #0a84ff;
-      color: white;
+      background: var(--btn-bg);
+      color: var(--text-color);
       transition: background 0.3s;
       user-select: none;
     }
     #menu button:hover {
-      background: #0066cc;
+      background: var(--btn-bg-hover);
+    }
+    #settings {
+      margin-top: 30px;
+      text-align: center;
+      color: var(--text-color);
+    }
+    #settings label {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    #settings select {
+      font-size: 18px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
     }
 
     /* Общие стили для игр */
     .game-wrapper {
       display: none;
       flex-grow: 1;
-      background: #222;
+      background: var(--game-bg);
       position: relative;
       flex-direction: column;
       align-items: center;
@@ -68,11 +100,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #222;
+      background: var(--game-bg);
     }
     canvas {
-      background: #222;
-      border: 2px solid #fff;
+      background: var(--game-bg);
+      border: 2px solid var(--rating-border);
       display: block;
       touch-action: none;
     }
@@ -81,12 +113,13 @@
       margin: 10px 0;
       letter-spacing: 10px;
       user-select: none;
+      color: var(--text-color);
     }
     #pause-btn, #mode-btn, #pong-back-btn {
       position: absolute;
       background: #444;
       border: none;
-      color: #fff;
+      color: var(--text-color);
       font-size: 16px;
       padding: 6px 12px;
       cursor: pointer;
@@ -128,28 +161,30 @@
       width: 250px;
       margin-bottom: 15px;
       text-align: center;
+      color: var(--text-color);
+      background: #222;
     }
     #nickname-overlay button {
-
- font-size: 18px;
+      font-size: 18px;
       padding: 10px 20px;
       border-radius: 6px;
       border: none;
-      background: #0a84ff;
-      color: white;
+      background: var(--btn-bg);
+      color: var(--text-color);
       cursor: pointer;
       user-select: none;
     }
     #nickname-overlay button:hover {
-      background: #0066cc;
+      background: var(--btn-bg-hover);
     }
     #rating {
       width: 300px;
-      background: #111;
-      border-left: 2px solid #fff;
+      background: var(--rating-bg);
+      border-left: 2px solid var(--rating-border);
       padding: 20px;
       box-sizing: border-box;
       overflow-y: auto;
+      color: var(--text-color);
     }
     #rating h2 {
       margin-top: 0;
@@ -161,7 +196,7 @@
     #rating table {
       width: 100%;
       border-collapse: collapse;
-      color: #fff;
+      color: var(--text-color);
     }
     #rating th, #rating td {
       padding: 8px 6px;
@@ -182,6 +217,17 @@
       border-radius: 4px;
     }
 
+    /* Цвета пинпонга из палитры */
+    .paddle {
+      background-color: var(--paddle-color);
+    }
+    .ball {
+      background-color: var(--ball-color);
+    }
+    .net {
+      background-color: var(--net-color);
+    }
+
     /* Сапёр */
     #minesweeper-container {
       display: flex;
@@ -191,9 +237,10 @@
       padding: 20px;
       flex-grow: 1;
       overflow-y: auto;
-      background: #222;
+      background: var(--game-bg);
       width: 100%;
       box-sizing: border-box;
+      color: var(--text-color);
     }
     #ms-header {
       width: 100%;
@@ -206,7 +253,7 @@
     #ms-header button {
       background: #444;
       border: none;
-      color: #fff;
+      color: var(--text-color);
       font-size: 16px;
       padding: 6px 12px;
       cursor: pointer;
@@ -227,13 +274,13 @@
       grid-template-rows: repeat(9, 40px);
       gap: 2px;
       background: #333;
-      border: 2px solid #fff;
+      border: 2px solid var(--rating-border);
       user-select: none;
     }
     .ms-cell {
       width: 40px;
       height: 40px;
-      background: #555;
+      background: var(--ms-cell-bg);
       border-radius: 4px;
       display: flex;
       justify-content: center;
@@ -241,13 +288,14 @@
       font-weight: bold;
       font-size: 20px;
       cursor: pointer;
-      color: white;
+      color: var(--text-color);
       user-select: none;
       position: relative;
+      transition: background 0.3s, color 0.3s;
     }
     .ms-cell.revealed {
-      background: #bbb;
-      color: black;
+      background: var(--ms-cell-revealed-bg);
+      color: var(--ms-cell-text-color);
       cursor: default;
     }
     .ms-cell.flagged::after {
@@ -256,6 +304,7 @@
       font-size: 20px;
       top: 2px;
       right: 2px;
+      color: var(--ms-cell-flag-color);
     }
     .ms-cell.mine {
       background: #f00;
@@ -269,6 +318,17 @@
     <h1>Выберите игру</h1>
     <button id="btn-pong">Пинпонг</button>
     <button id="btn-minesweeper">Сапёр</button>
+
+    <div id="settings">
+      <label for="palette-select">Цветовая палитра:</label>
+      <select id="palette-select" title="Выберите цветовую палитру">
+        <option value="default">Классическая</option>
+        <option value="sunset">Закат</option>
+        <option value="ocean">Океан</option>
+        <option value="forest">Лес</option>
+        <option value="neon">Неон</option>
+      </select>
+    </div>
   </div>
 
   <!-- Пинпонг -->
@@ -310,6 +370,120 @@
   </div>
 
   <script>
+    // --- ПАЛИТРЫ ---
+    const palettes = {
+      default: {
+        '--bg-color': '#000000',
+        '--text-color': '#ffffff',
+        '--btn-bg': '#0a84ff',
+        '--btn-bg-hover': '#0066cc',
+        '--game-bg': '#222222',
+        '--paddle-color': '#ffffff',
+        '--ball-color': '#ffffff',
+        '--net-color': '#ffffff',
+        '--rating-bg': '#111111',
+        '--rating-border': '#ffffff',
+        '--ms-cell-bg': '#555555',
+        '--ms-cell-revealed-bg': '#bbbbbb',
+        '--ms-cell-flag-color': '#f00',
+        '--ms-cell-text-color': 'black'
+      },
+      sunset: {
+        '--bg-color': '#2c1a1a',
+        '--text-color': '#ffd6ba',
+        '--btn-bg': '#ff6f61',
+        '--btn-bg-hover': '#e65b50',
+        '--game-bg': '#3e2f2f',
+        '--paddle-color': '#ffb997',
+        '--ball-color': '#ff6f61',
+        '--net-color': '#ffb997',
+        '--rating-bg': '#4a3a3a',
+        '--rating-border': '#ffb997',
+        '--ms-cell-bg': '#7a4e4e',
+        '--ms-cell-revealed-bg': '#ffd6ba',
+        '--ms-cell-flag-color': '#ff6f61',
+        '--ms-cell-text-color': '#4a2c2c'
+      },
+      ocean: {
+        '--bg-color': '#001f3f',
+        '--text-color': '#a7c7e7',
+        '--btn-bg': '#0074d9',
+        '--btn-bg-hover': '#005fa3',
+        '--game-bg': '#003366',
+        '--paddle-color': '#7fdbff',
+        '--ball-color': '#39cccc',
+        '--net-color': '#7fdbff',
+        '--rating-bg': '#00264d',
+        '--rating-border': '#7fdbff',
+        '--ms-cell-bg': '#005580',
+        '--ms-cell-revealed-bg': '#a7c7e7',
+        '--ms-cell-flag-color': '#39cccc',
+        '--ms-cell-text-color': '#00334d'
+      },
+      forest: {
+        '--bg-color': '#0b3d0b',
+        '--text-color': '#c6f6c6',
+        '--btn-bg': '#2ecc40',
+        '--btn-bg-hover': '#27ae34',
+        '--game-bg': '#145214',
+        '--paddle-color': '#a3d9a5',
+        '--ball-color': '#2ecc40',
+        '--net-color': '#a3d9a5',
+        '--rating-bg': '#1e5a1e',
+        '--rating-border': '#a3d9a5',
+        '--ms-cell-bg': '#2a6f2a',
+        '--ms-cell-revealed-bg': '#c6f6c6',
+        '--ms-cell-flag-color': '#27ae34',
+        '--ms-cell-text-color': '#144214'
+      },
+      neon: {
+        '--bg-color': '#0f0f0f',
+        '--text-color': '#39ff14',
+        '--btn-bg': '#39ff14',
+        '--btn-bg-hover': '#2ecc40',
+        '--game-bg': '#121212',
+        '--paddle-color': '#39ff14',
+        '--ball-color': '#ff00ff',
+        '--net-color': '#39ff14',
+        '--rating-bg': '#1a1a1a',
+        '--rating-border': '#39ff14',
+        '--ms-cell-bg': '#222222',
+        '--ms-cell-revealed-bg': '#39ff14',
+        '--ms-cell-flag-color': '#ff00ff',
+        '--ms-cell-text-color': '#121212'
+      }
+    };
+
+    // Применить палитру CSS переменных
+    function applyPalette(name) {
+      const palette = palettes[name] || palettes.default;
+      for (const varName in palette) {
+        document.documentElement.style.setProperty(varName, palette[varName]);
+      }
+    }
+
+    // Сохраняем и загружаем палитру из localStorage
+    const paletteSelect = document.getElementById('palette-select');
+    function savePalette(name) {
+      localStorage.setItem('selectedPalette', name);
+    }
+    function loadPalette() {
+      const saved = localStorage.getItem('selectedPalette');
+      if (saved && palettes[saved]) {
+        return saved;
+      }
+      return 'default';
+    }
+
+    paletteSelect.value = loadPalette();
+    applyPalette(paletteSelect.value);
+
+    paletteSelect.addEventListener('change', () => {
+      const val = paletteSelect.value;
+      applyPalette(val);
+      savePalette(val);
+    });
+
     // --- МЕНЮ ---
     const menu = document.getElementById('menu');
     const btnPong = document.getElementById('btn-pong');
@@ -330,7 +504,7 @@
       minesweeperGame.init();
     };
 
-    // --- ПИНПОНГ (код из предыдущего ответа) ---
+    // --- ПИНПОНГ ---
     (function(){
       const canvas = document.getElementById('pong');
       const ctx = canvas.getContext('2d');
@@ -487,7 +661,6 @@
       });
 
       pongBackBtn.addEventListener('click', () => {
-        // Остановить игру и вернуться в меню
         gameStarted = false;
         isPaused = false;
         removeKeyboardControls();
@@ -512,7 +685,7 @@
       function drawNet() {
         const netWidth = 4;
         const netHeight = 20;
-        const netColor = '#fff';
+        const netColor = getComputedStyle(document.documentElement).getPropertyValue('--net-color').trim() || '#fff';
         for (let i = 0; i < canvas.height; i += netHeight * 2) {
           drawRect((canvas.width - netWidth) / 2, i, netWidth, netHeight, netColor);
         }
@@ -615,11 +788,11 @@
       }
 
       function draw() {
-        drawRect(0, 0, canvas.width, canvas.height, '#222');
+        drawRect(0, 0, canvas.width, canvas.height, getComputedStyle(document.documentElement).getPropertyValue('--game-bg').trim() || '#222');
         drawNet();
-        drawRect(0, playerY, paddleWidth, paddleHeight, '#fff');
-        drawRect(canvas.width - paddleWidth, botY, paddleWidth, paddleHeight, '#fff');
-        drawCircle(ballX, ballY, ballRadius, '#fff');
+        drawRect(0, playerY, paddleWidth, paddleHeight, getComputedStyle(document.documentElement).getPropertyValue('--paddle-color').trim() || '#fff');
+        drawRect(canvas.width - paddleWidth, botY, paddleWidth, paddleHeight, getComputedStyle(document.documentElement).getPropertyValue('--paddle-color').trim() || '#fff');
+        drawCircle(ballX, ballY, ballRadius, getComputedStyle(document.documentElement).getPropertyValue('--ball-color').trim() || '#fff');
       }
 
       function checkGameOver() {
@@ -678,7 +851,6 @@
         requestAnimationFrame(gameLoop);
       }
 
-      // Инициализация канваса и управление по умолчанию — ПК режим
       canvas.width = 800;
       canvas.height = 500;
       initPositions();
@@ -693,6 +865,7 @@
       let revealedCount = 0;
       let flagsCount = 0;
       let gameOver = false;
+      let firstClick = true;
 
       const msBoard = document.getElementById('ms-board');
       const msStatus = document.getElementById('ms-status');
@@ -703,13 +876,13 @@
         gameOver = false;
         revealedCount = 0;
         flagsCount = 0;
+        firstClick = true;
         msStatus.textContent = `Мин: ${mineCount}`;
         board = [];
         msBoard.innerHTML = '';
         msBoard.style.gridTemplateColumns = `repeat(${boardSize}, 40px)`;
         msBoard.style.gridTemplateRows = `repeat(${boardSize}, 40px)`;
 
-        // Создаем пустое поле
         for(let i=0; i<boardSize; i++) {
           board[i] = [];
           for(let j=0; j<boardSize; j++) {
@@ -729,9 +902,6 @@
           }
         }
 
-        placeMines();
-        calculateAdjacents();
-
         msBoard.addEventListener('click', onCellClick);
         msBoard.addEventListener('contextmenu', onCellRightClick);
 
@@ -746,12 +916,26 @@
         };
       }
 
-      function placeMines() {
+      // Размещение мин с учётом безопасной зоны вокруг первой открытой клетки
+      function placeMinesSafe(firstRow, firstCol) {
         let placed = 0;
+        const safeCells = new Set();
+
+        // Добавляем в безопасную зону первую клетку и соседей
+        for(let dr=-1; dr<=1; dr++) {
+          for(let dc=-1; dc<=1; dc++) {
+            const nr = firstRow + dr;
+            const nc = firstCol + dc;
+            if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
+              safeCells.add(nr + ',' + nc);
+            }
+          }
+        }
+
         while(placed < mineCount) {
           const r = Math.floor(Math.random() * boardSize);
           const c = Math.floor(Math.random() * boardSize);
-          if (!board[r][c].mine) {
+          if (!board[r][c].mine && !safeCells.has(r + ',' + c)) {
             board[r][c].mine = true;
             placed++;
           }
@@ -789,6 +973,14 @@
         const c = +cell.dataset.col;
         const cellData = board[r][c];
         if (cellData.flagged || cellData.revealed) return;
+
+        if (firstClick) {
+          // При первом клике размещаем мины с безопасной зоной
+          placeMinesSafe(r, c);
+          calculateAdjacents();
+          firstClick = false;
+        }
+
         revealCell(r, c);
         checkWin();
       }
@@ -834,7 +1026,6 @@
           cellData.element.textContent = cellData.adjacent;
           cellData.element.style.color = getNumberColor(cellData.adjacent);
         } else {
-          // Рекурсивно открыть соседние пустые клетки
           for(let dr=-1; dr<=1; dr++) {
             for(let dc=-1; dc<=1; dc++) {
               if (dr === 0 && dc === 0) continue;

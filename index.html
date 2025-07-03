@@ -27,17 +27,19 @@
       color: var(--text-color);
       font-family: Arial, sans-serif;
       user-select: none;
-      display: flex;
       height: 100vh;
       overflow: hidden;
     }
+    /* Центрирование меню */
     #menu {
-      flex-grow: 1;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       background: var(--game-bg);
+      z-index: 1000;
     }
     #menu h1 {
       font-size: 48px;
@@ -84,6 +86,8 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      height: 100vh;
+      overflow: hidden;
     }
 
     /* Пинпонг */
@@ -215,17 +219,6 @@
     #rating::-webkit-scrollbar-thumb {
       background: #555;
       border-radius: 4px;
-    }
-
-    /* Цвета пинпонга из палитры */
-    .paddle {
-      background-color: var(--paddle-color);
-    }
-    .ball {
-      background-color: var(--ball-color);
-    }
-    .net {
-      background-color: var(--net-color);
     }
 
     /* Сапёр */
@@ -454,7 +447,6 @@
       }
     };
 
-    // Применить палитру CSS переменных
     function applyPalette(name) {
       const palette = palettes[name] || palettes.default;
       for (const varName in palette) {
@@ -462,7 +454,6 @@
       }
     }
 
-    // Сохраняем и загружаем палитру из localStorage
     const paletteSelect = document.getElementById('palette-select');
     function savePalette(name) {
       localStorage.setItem('selectedPalette', name);
@@ -491,6 +482,12 @@
 
     const pongContainer = document.getElementById('pong-container');
     const minesweeperContainer = document.getElementById('minesweeper-container');
+
+    function showMenu() {
+      menu.style.display = 'flex';
+      pongContainer.style.display = 'none';
+      minesweeperContainer.style.display = 'none';
+    }
 
     btnPong.onclick = () => {
       menu.style.display = 'none';
@@ -660,13 +657,13 @@
         gameLoop();
       });
 
+      // Кнопка выхода в меню
       pongBackBtn.addEventListener('click', () => {
         gameStarted = false;
         isPaused = false;
         removeKeyboardControls();
         removeTouchControls();
-        pongContainer.style.display = 'none';
-        menu.style.display = 'flex';
+        showMenu();
       });
 
       function drawRect(x, y, w, h, color) {
@@ -911,17 +908,14 @@
         msBackBtn.onclick = () => {
           msBoard.removeEventListener('click', onCellClick);
           msBoard.removeEventListener('contextmenu', onCellRightClick);
-          minesweeperContainer.style.display = 'none';
-          menu.style.display = 'flex';
+          showMenu();
         };
       }
 
-      // Размещение мин с учётом безопасной зоны вокруг первой открытой клетки
       function placeMinesSafe(firstRow, firstCol) {
         let placed = 0;
         const safeCells = new Set();
 
-        // Добавляем в безопасную зону первую клетку и соседей
         for(let dr=-1; dr<=1; dr++) {
           for(let dc=-1; dc<=1; dc++) {
             const nr = firstRow + dr;
@@ -975,7 +969,6 @@
         if (cellData.flagged || cellData.revealed) return;
 
         if (firstClick) {
-          // При первом клике размещаем мины с безопасной зоной
           placeMinesSafe(r, c);
           calculateAdjacents();
           firstClick = false;

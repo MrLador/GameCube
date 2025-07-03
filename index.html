@@ -1,194 +1,198 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Om Nom Stories</title>
-    <style>
-        :root {
-            --primary: #4CAF50;    /* Основной зеленый https://heck.ai/ru */
-            --secondary: #8BC34A;  /* Светло-зеленый */
-            --accent: #FFC107;     /* Желтый для акцентов */
-            --dark: #2E7D32;       /* Темно-зеленый */
-            --light: #F1F8E9;      /* Светлый фон */
-            
-            font-family: 'Comic Neue', cursive, sans-serif;
-            line-height: 1.6;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--light);
-            color: var(--dark);
-        }
-
-        .hero {
-            padding: 6rem 2rem;
-            background: linear-gradient(160deg, var(--primary), var(--secondary));
-            color: white;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: -50px;
-            left: 0;
-            right: 0;
-            height: 100px;
-            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="%23FFC107"/></svg>') repeat-x;
-            transform: rotate(3deg);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-        }
-
-        .grid {
-            display: grid;
-            gap: 2rem;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            padding: 4rem 0;
-        }
-
-        .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 16px rgba(76, 175, 80, 0.1);
-            transition: transform 0.3s ease;
-            border: 3px solid var(--accent);
-        }
-
-        .card:hover {
-            transform: translateY(-10px) rotate(2deg);
-        }
-
-        .character {
-            width: 150px;
-            height: 150px;
-            background: var(--accent);
-            border-radius: 50%;
-            margin: 0 auto 1rem;
-            position: relative;
-        }
-
-        .character::before {
-            content: 'Om Nom';
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-weight: bold;
-            color: var(--dark);
-        }
-
-        .button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: var(--accent);
-            color: var(--dark);
-            text-decoration: none;
-            border-radius: 30px;
-            font-weight: 700;
-            transition: transform 0.3s;
-            border: 2px solid var(--dark);
-        }
-
-        .button:hover {
-            transform: scale(1.05);
-        }
-
-        nav {
-            padding: 1rem 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            position: sticky;
-            top: 0;
-            border-bottom: 3px solid var(--accent);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            justify-content: center;
-        }
-
-        .nav-links a {
-            color: var(--dark);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border-radius: 15px;
-            transition: background 0.3s;
-        }
-
-        .nav-links a:hover {
-            background: var(--secondary);
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .hero {
-                padding: 4rem 1rem;
-            }
-            
-            .nav-links {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Пинпонг с ботом</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+    canvas {
+      background: #222;
+      display: block;
+      border: 2px solid #fff;
+    }
+    .score {
+      position: absolute;
+      top: 20px;
+      font-size: 24px;
+      width: 100%;
+      text-align: center;
+      letter-spacing: 10px;
+    }
+  </style>
 </head>
 <body>
-    <nav>
-        <div class="container">
-            <div class="nav-links">
-                <a href="#about">Об игре</a> 
-                <a href="#characters">Персонажи</a>
-                <a href="#levels">Уровни</a>
-                <a href="https://genarcy.site/Pages/games/cuttherope/">Играть</a>
-            </div>
-        </div>
-    </nav>
+  <div class="score" id="score">0 : 0</div>
+  <canvas id="pong" width="800" height="500"></canvas>
 
-    <section class="hero">
-        <div class="container">
-            <div class="character"></div>
-            <h1>Om Nom Stories</h1>
-            <p>Новые приключения любимого монстрика!</p>
-            <a href="https://genarcy.site/Pages/games/cuttherope/" class="button">Играть сейчас!</a>
-        </div>
-    </section>
+  <script>
+    const canvas = document.getElementById('pong');
+    const ctx = canvas.getContext('2d');
 
-    <section class="container" id="features">
-        <div class="grid">
-            <div class="card">
-                <h3>🎮 100+ уровней</h3>
-                <p>Увлекательные головоломки с новыми механиками</p>
-            </div>
-            <div class="card">
-                <h3>🌟 Новые костюмы</h3>
-                <p>Собирай бонусы и меняй внешность Om Nom</p>
-            </div>
-            <div class="card">
-                <h3>🏆 Ежедневные награды</h3>
-                <p>Зарабатывай звёзды и открывай секретные уровни</p>
-            </div>
-        </div>
-    </section>
+    // Размеры ракеток и мяча
+    const paddleWidth = 10;
+    const paddleHeight = 100;
+    const ballRadius = 10;
+
+    // Позиции и скорости
+    let playerY = (canvas.height - paddleHeight) / 2;
+    let botY = (canvas.height - paddleHeight) / 2;
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballSpeedX = 5;
+    let ballSpeedY = 3;
+
+    // Скорость движения игрока
+    const paddleSpeed = 7;
+
+    // Счёт
+    let playerScore = 0;
+    let botScore = 0;
+
+    // Управление игроком
+    let upPressed = false;
+    let downPressed = false;
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowUp') upPressed = true;
+      if (e.key === 'ArrowDown') downPressed = true;
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowUp') upPressed = false;
+      if (e.key === 'ArrowDown') downPressed = false;
+    });
+
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+
+    function drawCircle(x, y, r, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2, false);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawNet() {
+      const netWidth = 4;
+      const netHeight = 20;
+      const netColor = '#fff';
+      for (let i = 0; i < canvas.height; i += netHeight * 2) {
+        drawRect((canvas.width - netWidth) / 2, i, netWidth, netHeight, netColor);
+      }
+    }
+
+    function resetBall() {
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
+      // Направление мяча в сторону проигравшей стороны
+      ballSpeedX = -ballSpeedX;
+      ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
+    }
+
+    function update() {
+      // Движение игрока
+      if (upPressed && playerY > 0) playerY -= paddleSpeed;
+      if (downPressed && playerY < canvas.height - paddleHeight) playerY += paddleSpeed;
+
+      // Движение мяча
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Столкновение с верхом и низом
+      if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+        ballSpeedY = -ballSpeedY;
+      }
+
+      // Столкновение с ракетками
+      // Левая ракетка (игрок)
+      if (
+        ballX - ballRadius < paddleWidth &&
+        ballY > playerY &&
+        ballY < playerY + paddleHeight
+      ) {
+        ballSpeedX = -ballSpeedX;
+        // Добавим немного вариации по Y
+        let deltaY = ballY - (playerY + paddleHeight / 2);
+        ballSpeedY = deltaY * 0.3;
+      }
+
+      // Правая ракетка (бот)
+      if (
+        ballX + ballRadius > canvas.width - paddleWidth &&
+        ballY > botY &&
+        ballY < botY + paddleHeight
+      ) {
+        ballSpeedX = -ballSpeedX;
+        let deltaY = ballY - (botY + paddleHeight / 2);
+        ballSpeedY = deltaY * 0.3;
+      }
+
+      // Голы
+      if (ballX - ballRadius < 0) {
+        botScore++;
+        updateScore();
+        resetBall();
+      } else if (ballX + ballRadius > canvas.width) {
+        playerScore++;
+        updateScore();
+        resetBall();
+      }
+
+      // Логика бота — простое следование за мячом с ограниченной скоростью
+      const botCenter = botY + paddleHeight / 2;
+      if (botCenter < ballY - 35) {
+        botY += paddleSpeed * 0.6;
+      } else if (botCenter > ballY + 35) {
+        botY -= paddleSpeed * 0.6;
+      }
+
+      // Ограничение движения бота
+      if (botY < 0) botY = 0;
+      if (botY > canvas.height - paddleHeight) botY = canvas.height - paddleHeight;
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = `${playerScore} : ${botScore}`;
+    }
+
+    function draw() {
+      // Очистка экрана
+      drawRect(0, 0, canvas.width, canvas.height, '#222');
+
+      // Сетка
+      drawNet();
+
+      // Ракетки
+      drawRect(0, playerY, paddleWidth, paddleHeight, '#fff');
+      drawRect(canvas.width - paddleWidth, botY, paddleWidth, paddleHeight, '#fff');
+
+      // Мяч
+      drawCircle(ballX, ballY, ballRadius, '#fff');
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Запуск игры
+    updateScore();
+    gameLoop();
+  </script>
 </body>
 </html>

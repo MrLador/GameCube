@@ -162,7 +162,6 @@
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
 
-    // Начальная скорость мяча
     let ballSpeedX = 5;
     let ballSpeedY = 3;
 
@@ -177,16 +176,12 @@
     let isPaused = false;
     let gameStarted = false;
 
-    // Счётчик отбитий мяча (для увеличения скорости)
     let hitCount = 0;
 
-    // Ник игрока
     let playerNick = '';
 
-    // Рейтинг — массив объектов {nick, wins}
     let rating = [];
 
-    // Элементы DOM
     const scoreEl = document.getElementById('score');
     const pauseBtn = document.getElementById('pause-btn');
     const nicknameOverlay = document.getElementById('nickname-overlay');
@@ -194,7 +189,6 @@
     const startBtn = document.getElementById('start-btn');
     const ratingBody = document.getElementById('rating-body');
 
-    // Обработчики клавиш
     document.addEventListener('keydown', e => {
       if (!gameStarted || isPaused) return;
       if (e.key === 'ArrowUp') upPressed = true;
@@ -251,7 +245,6 @@
     function resetBall(direction = 1) {
       ballX = canvas.width / 2;
       ballY = canvas.height / 2;
-      // Направление мяча в сторону проигравшей стороны (1 — вправо, -1 — влево)
       ballSpeedX = 5 * direction;
       ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
       hitCount = 0;
@@ -273,7 +266,6 @@
     }
 
     function increaseBallSpeed() {
-      // Увеличиваем скорость мяча на 10% при каждом втором отбитии
       ballSpeedX *= 1.1;
       ballSpeedY *= 1.1;
     }
@@ -281,21 +273,16 @@
     function update() {
       if (isPaused) return;
 
-      // Движение игрока
       if (upPressed && playerY > 0) playerY -= paddleSpeed;
       if (downPressed && playerY < canvas.height - paddleHeight) playerY += paddleSpeed;
 
-      // Движение мяча
       ballX += ballSpeedX;
       ballY += ballSpeedY;
 
-      // Столкновение с верхом и низом
       if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
         ballSpeedY = -ballSpeedY;
       }
 
-      // Столкновение с ракетками
-      // Левая ракетка (игрок)
       if (
         ballX - ballRadius < paddleWidth &&
         ballY > playerY &&
@@ -311,7 +298,6 @@
         }
       }
 
-      // Правая ракетка (бот)
       if (
         ballX + ballRadius > canvas.width - paddleWidth &&
         ballY > botY &&
@@ -327,7 +313,6 @@
         }
       }
 
-      // Голы
       if (ballX - ballRadius < 0) {
         botScore++;
         updateScore();
@@ -340,7 +325,6 @@
         resetBall(-1);
       }
 
-      // Логика бота — простое следование за мячом с ограниченной скоростью
       const botCenter = botY + paddleHeight / 2;
       if (botCenter < ballY - 35) {
         botY += paddleSpeed * 0.6;
@@ -348,56 +332,46 @@
         botY -= paddleSpeed * 0.6;
       }
 
-      // Ограничение движения бота
       if (botY < 0) botY = 0;
       if (botY > canvas.height - paddleHeight) botY = canvas.height - paddleHeight;
     }
 
     function draw() {
-      // Очистка экрана
       drawRect(0, 0, canvas.width, canvas.height, '#222');
-
-      // Сетка
       drawNet();
-
-      // Ракетки
       drawRect(0, playerY, paddleWidth, paddleHeight, '#fff');
       drawRect(canvas.width - paddleWidth, botY, paddleWidth, paddleHeight, '#fff');
-
-      // Мяч
       drawCircle(ballX, ballY, ballRadius, '#fff');
     }
 
     function checkGameOver() {
-      // Игра до 10 очков
       const maxScore = 10;
       if (playerScore >= maxScore || botScore >= maxScore) {
         isPaused = true;
         pauseBtn.textContent = 'Пауза';
         setTimeout(() => {
-          alert(playerScore > botScore ? `Поздравляем, ${playerNick}! Вы выиграли!` : 'Вы проиграли. Попробуйте снова!');
-          updateRating(playerNick, playerScore > botScore);
-          resetGame();
+          alert(playerScore > botScore ? `Поздравляем, ${playerNick}! Вы выиграли!` : 'Вы проиграли. Следующий игрок, введите ник.');
+          if (playerScore > botScore) {
+            updateRating(playerNick);
+          }
+          // Показываем оверлей для нового игрока
+          nicknameInput.value = '';
+          nicknameOverlay.style.display = 'flex';
+          gameStarted = false;
         }, 100);
         return true;
       }
       return false;
     }
 
-    function updateRating(nick, won) {
-      if (!won) return; // В рейтинг добавляем только победы
-
-      // Ищем игрока в рейтинге
+    function updateRating(nick) {
       const playerEntry = rating.find(r => r.nick === nick);
       if (playerEntry) {
         playerEntry.wins++;
       } else {
         rating.push({ nick: nick, wins: 1 });
       }
-
-      // Сортируем рейтинг по убыванию побед
       rating.sort((a, b) => b.wins - a.wins);
-
       renderRating();
     }
 

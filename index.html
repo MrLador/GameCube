@@ -3,74 +3,227 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Пинпонг с ботом</title>
+  <title>Пинпонг с ботом и рейтингом</title>
   <style>
     body {
       margin: 0;
       background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       color: #fff;
       font-family: Arial, sans-serif;
       user-select: none;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      position: relative;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #222;
     }
     canvas {
       background: #222;
-      display: block;
       border: 2px solid #fff;
+      display: block;
     }
-    .score {
-      position: absolute;
-      top: 20px;
+    #score {
       font-size: 24px;
-      width: 100%;
-      text-align: center;
+      margin: 10px 0;
       letter-spacing: 10px;
+      user-select: none;
+    }
+    #pause-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #444;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      user-select: none;
+      z-index: 10;
+    }
+    #pause-btn:hover {
+      background: #666;
+    }
+    #nickname-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    #nickname-overlay input {
+      font-size: 20px;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      width: 250px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #nickname-overlay button {
+      font-size: 18px;
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      background: #0a84ff;
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+    #nickname-overlay button:hover {
+      background: #0066cc;
+    }
+    #rating {
+      width: 300px;
+      background: #111;
+      border-left: 2px solid #fff;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #rating h2 {
+      margin-top: 0;
+      text-align: center;
+      font-weight: normal;
+      border-bottom: 1px solid #555;
+      padding-bottom: 10px;
+    }
+    #rating table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #fff;
+    }
+    #rating th, #rating td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #444;
+      text-align: center;
+    }
+    #rating th {
+      background: #333;
+    }
+    #rating tbody tr:hover {
+      background: #222;
+    }
+    /* Scrollbar for rating */
+    #rating::-webkit-scrollbar {
+      width: 8px;
+    }
+    #rating::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
-  <div class="score" id="score">0 : 0</div>
-  <canvas id="pong" width="800" height="500"></canvas>
+  <div id="game-container">
+    <button id="pause-btn" title="Пауза">Пауза</button>
+    <div id="score">0 : 0</div>
+    <canvas id="pong" width="800" height="500"></canvas>
+
+    <div id="nickname-overlay">
+      <input type="text" id="nickname-input" placeholder="Введите ваш ник" maxlength="15" />
+      <button id="start-btn">Начать игру</button>
+    </div>
+  </div>
+
+  <div id="rating">
+    <h2>Рейтинг игроков</h2>
+    <table>
+      <thead>
+        <tr><th>Место</th><th>Ник</th><th>Победы</th></tr>
+      </thead>
+      <tbody id="rating-body">
+        <!-- Рейтинг будет динамически добавляться сюда -->
+      </tbody>
+    </table>
+  </div>
 
   <script>
     const canvas = document.getElementById('pong');
     const ctx = canvas.getContext('2d');
 
-    // Размеры ракеток и мяча
     const paddleWidth = 10;
     const paddleHeight = 100;
     const ballRadius = 10;
 
-    // Позиции и скорости
     let playerY = (canvas.height - paddleHeight) / 2;
     let botY = (canvas.height - paddleHeight) / 2;
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
+
+    // Начальная скорость мяча
     let ballSpeedX = 5;
     let ballSpeedY = 3;
 
-    // Скорость движения игрока
     const paddleSpeed = 7;
 
-    // Счёт
     let playerScore = 0;
     let botScore = 0;
 
-    // Управление игроком
     let upPressed = false;
     let downPressed = false;
 
+    let isPaused = false;
+    let gameStarted = false;
+
+    // Счётчик отбитий мяча (для увеличения скорости)
+    let hitCount = 0;
+
+    // Ник игрока
+    let playerNick = '';
+
+    // Рейтинг — массив объектов {nick, wins}
+    let rating = [];
+
+    // Элементы DOM
+    const scoreEl = document.getElementById('score');
+    const pauseBtn = document.getElementById('pause-btn');
+    const nicknameOverlay = document.getElementById('nickname-overlay');
+    const nicknameInput = document.getElementById('nickname-input');
+    const startBtn = document.getElementById('start-btn');
+    const ratingBody = document.getElementById('rating-body');
+
+    // Обработчики клавиш
     document.addEventListener('keydown', e => {
+      if (!gameStarted || isPaused) return;
       if (e.key === 'ArrowUp') upPressed = true;
       if (e.key === 'ArrowDown') downPressed = true;
     });
 
     document.addEventListener('keyup', e => {
+      if (!gameStarted || isPaused) return;
       if (e.key === 'ArrowUp') upPressed = false;
       if (e.key === 'ArrowDown') downPressed = false;
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (!gameStarted) return;
+      isPaused = !isPaused;
+      pauseBtn.textContent = isPaused ? 'Продолжить' : 'Пауза';
+    });
+
+    startBtn.addEventListener('click', () => {
+      const nick = nicknameInput.value.trim();
+      if (nick.length === 0) {
+        alert('Пожалуйста, введите ник.');
+        return;
+      }
+      playerNick = nick;
+      nicknameOverlay.style.display = 'none';
+      gameStarted = true;
+      resetGame();
+      gameLoop();
     });
 
     function drawRect(x, y, w, h, color) {
@@ -95,15 +248,39 @@
       }
     }
 
-    function resetBall() {
+    function resetBall(direction = 1) {
       ballX = canvas.width / 2;
       ballY = canvas.height / 2;
-      // Направление мяча в сторону проигравшей стороны
-      ballSpeedX = -ballSpeedX;
+      // Направление мяча в сторону проигравшей стороны (1 — вправо, -1 — влево)
+      ballSpeedX = 5 * direction;
       ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
+      hitCount = 0;
+    }
+
+    function resetGame() {
+      playerScore = 0;
+      botScore = 0;
+      updateScore();
+      playerY = (canvas.height - paddleHeight) / 2;
+      botY = (canvas.height - paddleHeight) / 2;
+      resetBall(1);
+      isPaused = false;
+      pauseBtn.textContent = 'Пауза';
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `${playerScore} : ${botScore}`;
+    }
+
+    function increaseBallSpeed() {
+      // Увеличиваем скорость мяча на 10% при каждом втором отбитии
+      ballSpeedX *= 1.1;
+      ballSpeedY *= 1.1;
     }
 
     function update() {
+      if (isPaused) return;
+
       // Движение игрока
       if (upPressed && playerY > 0) playerY -= paddleSpeed;
       if (downPressed && playerY < canvas.height - paddleHeight) playerY += paddleSpeed;
@@ -125,9 +302,13 @@
         ballY < playerY + paddleHeight
       ) {
         ballSpeedX = -ballSpeedX;
-        // Добавим немного вариации по Y
         let deltaY = ballY - (playerY + paddleHeight / 2);
         ballSpeedY = deltaY * 0.3;
+
+        hitCount++;
+        if (hitCount % 2 === 0) {
+          increaseBallSpeed();
+        }
       }
 
       // Правая ракетка (бот)
@@ -139,17 +320,24 @@
         ballSpeedX = -ballSpeedX;
         let deltaY = ballY - (botY + paddleHeight / 2);
         ballSpeedY = deltaY * 0.3;
+
+        hitCount++;
+        if (hitCount % 2 === 0) {
+          increaseBallSpeed();
+        }
       }
 
       // Голы
       if (ballX - ballRadius < 0) {
         botScore++;
         updateScore();
-        resetBall();
+        if (checkGameOver()) return;
+        resetBall(1);
       } else if (ballX + ballRadius > canvas.width) {
         playerScore++;
         updateScore();
-        resetBall();
+        if (checkGameOver()) return;
+        resetBall(-1);
       }
 
       // Логика бота — простое следование за мячом с ограниченной скоростью
@@ -163,10 +351,6 @@
       // Ограничение движения бота
       if (botY < 0) botY = 0;
       if (botY > canvas.height - paddleHeight) botY = canvas.height - paddleHeight;
-    }
-
-    function updateScore() {
-      document.getElementById('score').textContent = `${playerScore} : ${botScore}`;
     }
 
     function draw() {
@@ -184,15 +368,62 @@
       drawCircle(ballX, ballY, ballRadius, '#fff');
     }
 
+    function checkGameOver() {
+      // Игра до 10 очков
+      const maxScore = 10;
+      if (playerScore >= maxScore || botScore >= maxScore) {
+        isPaused = true;
+        pauseBtn.textContent = 'Пауза';
+        setTimeout(() => {
+          alert(playerScore > botScore ? `Поздравляем, ${playerNick}! Вы выиграли!` : 'Вы проиграли. Попробуйте снова!');
+          updateRating(playerNick, playerScore > botScore);
+          resetGame();
+        }, 100);
+        return true;
+      }
+      return false;
+    }
+
+    function updateRating(nick, won) {
+      if (!won) return; // В рейтинг добавляем только победы
+
+      // Ищем игрока в рейтинге
+      const playerEntry = rating.find(r => r.nick === nick);
+      if (playerEntry) {
+        playerEntry.wins++;
+      } else {
+        rating.push({ nick: nick, wins: 1 });
+      }
+
+      // Сортируем рейтинг по убыванию побед
+      rating.sort((a, b) => b.wins - a.wins);
+
+      renderRating();
+    }
+
+    function renderRating() {
+      ratingBody.innerHTML = '';
+      rating.forEach((player, index) => {
+        const tr = document.createElement('tr');
+        const placeTd = document.createElement('td');
+        placeTd.textContent = index + 1;
+        const nickTd = document.createElement('td');
+        nickTd.textContent = player.nick;
+        const winsTd = document.createElement('td');
+        winsTd.textContent = player.wins;
+        tr.appendChild(placeTd);
+        tr.appendChild(nickTd);
+        tr.appendChild(winsTd);
+        ratingBody.appendChild(tr);
+      });
+    }
+
     function gameLoop() {
+      if (!gameStarted) return;
       update();
       draw();
       requestAnimationFrame(gameLoop);
     }
-
-    // Запуск игры
-    updateScore();
-    gameLoop();
   </script>
 </body>
 </html>

@@ -2,15 +2,19 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ping Pong с выбором режима и чётким счётом</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Ping Pong с выбором режима и вертикальной мобильной версией</title>
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
     background: #f0f0f0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    user-select: none;
     font-family: Arial, sans-serif;
+    user-select: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   #score {
     font-size: 32px;
@@ -44,13 +48,15 @@
     max-width: 800px;
     aspect-ratio: 7 / 4;
     transition: all 0.3s ease;
-  }
-  #gameCanvas {
-    width: 100%;
-    height: 100%;
     background: #222;
     border-radius: 8px;
+    touch-action: none;
+  }
+  #gameCanvas {
     display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
   }
   #menu {
     position: fixed;
@@ -82,18 +88,77 @@
   #menu button:hover {
     background: #005fa3;
   }
-  /* Эмодзи крупнее */
   #menu button span.emoji {
     font-size: 48px;
     user-select: none;
   }
 
-  /* Мобильная версия: вертикальное расположение игрового поля */
+  /* Сенсорные кнопки управления для мобильных */
+  #touchControls {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 100%;
+    pointer-events: none;
+    display: none;
+    z-index: 20;
+  }
+  #leftControls, #rightControls {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: auto;
+  }
+  #leftControls {
+    left: 10px;
+  }
+  #rightControls {
+    right: 10px;
+  }
+  .touchBtn {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 119, 204, 0.7);
+    border-radius: 50%;
+    color: white;
+    font-size: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    touch-action: none;
+    box-shadow: 0 0 10px rgba(0,119,204,0.8);
+    transition: background-color 0.2s ease;
+  }
+  .touchBtn:active {
+    background: rgba(0, 119, 204, 1);
+  }
+
+  /* Мобильная версия: поворот игрового поля на 90 градусов */
   @media (max-width: 600px) {
     #gameContainer {
-      aspect-ratio: 4 / 7; /* поменяли на портрет */
-      max-width: 400px;
       width: 90vw;
+      max-width: 400px;
+      aspect-ratio: 4 / 7; /* для правильного расчёта */
+      /* Поворот контейнера */
+      transform: rotate(90deg);
+      transform-origin: center center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    #score {
+      width: 140px;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    #touchControls {
+      display: block;
+    }
+    /* Подвинем меню чуть выше, чтобы не мешал поворот */
+    #menu h1 {
+      font-size: 24px;
     }
   }
 </style>
@@ -105,8 +170,21 @@
   <span id="colon">:</span>
   <span id="score2">0</span>
 </div>
+
 <div id="gameContainer">
   <canvas id="gameCanvas" width="700" height="400"></canvas>
+</div>
+
+<!-- Сенсорные кнопки для мобильного управления -->
+<div id="touchControls">
+  <div id="leftControls">
+    <div id="btnP1Up" class="touchBtn" aria-label="Игрок 1 вверх">▲</div>
+    <div id="btnP1Down" class="touchBtn" aria-label="Игрок 1 вниз">▼</div>
+  </div>
+  <div id="rightControls">
+    <div id="btnP2Up" class="touchBtn" aria-label="Игрок 2 вверх">▲</div>
+    <div id="btnP2Down" class="touchBtn" aria-label="Игрок 2 вниз">▼</div>
+  </div>
 </div>
 
 <div id="menu">
@@ -124,6 +202,13 @@
   const menu = document.getElementById('menu');
   const btnPvP = document.getElementById('btnPvP');
   const btnPvBot = document.getElementById('btnPvBot');
+
+  // Сенсорные кнопки
+  const touchControls = document.getElementById('touchControls');
+  const btnP1Up = document.getElementById('btnP1Up');
+  const btnP1Down = document.getElementById('btnP1Down');
+  const btnP2Up = document.getElementById('btnP2Up');
+  const btnP2Down = document.getElementById('btnP2Down');
 
   // Базовые размеры для логики
   const BASE_WIDTH = 700;
@@ -145,6 +230,12 @@
 
   // Управление
   const keys = {};
+  const touchState = {
+    p1Up: false,
+    p1Down: false,
+    p2Up: false,
+    p2Down: false
+  };
 
   // Режим игры: 'pvp' или 'pvbot'
   let gameMode = null;
@@ -188,30 +279,52 @@
 
   // Обновление логики игры
   function update() {
-    // Движение ракеток игрока 1
-    if (keys['w']) {
-      paddle1.dy = -PADDLE_SPEED;
-    } else if (keys['s']) {
-      paddle1.dy = PADDLE_SPEED;
+    // --- Управление игрока 1 ---
+    // На ПК — клавиши W/S (через e.code)
+    // На мобилке — сенсорные кнопки
+    if (isMobile()) {
+      if (touchState.p1Up) {
+        paddle1.dy = -PADDLE_SPEED;
+      } else if (touchState.p1Down) {
+        paddle1.dy = PADDLE_SPEED;
+      } else {
+        paddle1.dy = 0;
+      }
     } else {
-      paddle1.dy = 0;
+      if (keys['KeyW']) {
+        paddle1.dy = -PADDLE_SPEED;
+      } else if (keys['KeyS']) {
+        paddle1.dy = PADDLE_SPEED;
+      } else {
+        paddle1.dy = 0;
+      }
     }
     paddle1.y += paddle1.dy;
     paddle1.y = Math.max(0, Math.min(BASE_HEIGHT - paddle1.height, paddle1.y));
 
-    // Движение ракетки игрока 2 или бота
+    // --- Управление игрока 2 ---
     if (gameMode === 'pvp') {
-      if (keys['arrowup']) {
-        paddle2.dy = -PADDLE_SPEED;
-      } else if (keys['arrowdown']) {
-        paddle2.dy = PADDLE_SPEED;
+      if (isMobile()) {
+        if (touchState.p2Up) {
+          paddle2.dy = -PADDLE_SPEED;
+        } else if (touchState.p2Down) {
+          paddle2.dy = PADDLE_SPEED;
+        } else {
+          paddle2.dy = 0;
+        }
       } else {
-        paddle2.dy = 0;
+        if (keys['ArrowUp']) {
+          paddle2.dy = -PADDLE_SPEED;
+        } else if (keys['ArrowDown']) {
+          paddle2.dy = PADDLE_SPEED;
+        } else {
+          paddle2.dy = 0;
+        }
       }
       paddle2.y += paddle2.dy;
       paddle2.y = Math.max(0, Math.min(BASE_HEIGHT - paddle2.height, paddle2.y));
     } else if (gameMode === 'pvbot') {
-      // Простой ИИ: двигается к мячу с ограниченной скоростью
+      // ИИ
       const centerPaddle = paddle2.y + paddle2.height / 2;
       if (centerPaddle < ball.y - 10) {
         paddle2.y += PADDLE_SPEED * 0.6;
@@ -319,16 +432,57 @@
 
   // Обработчики клавиатуры
   window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
+    keys[e.code] = true;
   });
   window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false;
+    keys[e.code] = false;
   });
+
+  // Сенсорные кнопки — обработка нажатий и отпусканий
+  function setupTouchButton(btn, stateKey) {
+    btn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      touchState[stateKey] = true;
+    }, {passive: false});
+    btn.addEventListener('touchend', e => {
+      e.preventDefault();
+      touchState[stateKey] = false;
+    }, {passive: false});
+    btn.addEventListener('touchcancel', e => {
+      e.preventDefault();
+      touchState[stateKey] = false;
+    }, {passive: false});
+  }
+  setupTouchButton(btnP1Up, 'p1Up');
+  setupTouchButton(btnP1Down, 'p1Down');
+  setupTouchButton(btnP2Up, 'p2Up');
+  setupTouchButton(btnP2Down, 'p2Down');
+
+  // Проверка мобильного устройства (простая)
+  function isMobile() {
+    return window.matchMedia("(max-width: 600px)").matches;
+  }
 
   // Запуск игры с выбранным режимом
   function startGame(mode) {
     gameMode = mode;
     menu.style.display = 'none';
+
+    // Показываем/скрываем сенсорные кнопки в зависимости от режима и устройства
+    if (isMobile()) {
+      touchControls.style.display = 'flex';
+      if (mode === 'pvbot') {
+        // Скрываем кнопки игрока 2, т.к. бот
+        btnP2Up.style.display = 'none';
+        btnP2Down.style.display = 'none';
+      } else {
+        btnP2Up.style.display = 'flex';
+        btnP2Down.style.display = 'flex';
+      }
+    } else {
+      touchControls.style.display = 'none';
+    }
+
     initObjects();
     loop();
   }
@@ -337,6 +491,12 @@
   btnPvP.addEventListener('click', () => startGame('pvp'));
   btnPvBot.addEventListener('click', () => startGame('pvbot'));
 
+  // При изменении размера окна — прячем сенсорные кнопки, если не мобильный
+  window.addEventListener('resize', () => {
+    if (!isMobile()) {
+      touchControls.style.display = 'none';
+    }
+  });
 })();
 </script>
 

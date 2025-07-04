@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Vector Pong в стиле Monument Valley</title>
+<title>Vector Pong — повернутая мобильная версия</title>
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
@@ -18,14 +18,18 @@
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
     border-radius: 20px;
     touch-action: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 800px;
+    height: 450px;
   }
   canvas {
     display: block;
     background: #e0e7ff;
     border-radius: 20px;
+    box-shadow: inset 0 0 30px #c0d8ff;
+    width: 800px;
+    height: 450px;
+    transform-origin: center center;
+    transition: transform 0.3s ease;
   }
   #scoreContainer {
     position: absolute;
@@ -42,11 +46,13 @@
   #scoreLeft, #scoreRight {
     user-select: none;
   }
-  #instructions {
-    font-size: 1rem;
-    color: #666;
-    margin-top: 10px;
-    user-select: none;
+  #scoreLeft::after {
+    content: " : ";
+    margin: 0 10px;
+    color: #4a4a4a;
+  }
+  #scoreRight::after {
+    content: "";
   }
   #timer {
     position: absolute;
@@ -59,102 +65,47 @@
     user-select: none;
     pointer-events: none;
   }
+  #instructions {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 10px;
+    user-select: none;
+  }
 
-  /* ПК версия */
-  @media (min-width: 601px) {
+  /* Мобильная версия — поворот canvas и контейнера */
+  @media (max-width: 600px) {
     #gameContainer {
-      width: 800px;
-      height: 450px;
-      flex-direction: column;
+      width: 90vw;
+      height: calc(90vw * 1.7777); /* 800/450 = 1.7777 */
+      max-height: 90vh;
+      transform: rotate(90deg);
+      transform-origin: center center;
     }
     canvas {
-      width: 800px !important;
-      height: 450px !important;
+      width: 100%;
+      height: 100%;
+      transform: none !important; /* отменяем поворот canvas, т.к. поворачиваем контейнер */
     }
     #scoreContainer {
       top: 10px;
-      justify-content: center;
-    }
-    #scoreLeft, #scoreRight {
-      margin: 0 10px;
-    }
-    #scoreLeft::after {
-      content: " : ";
-      margin: 0 10px;
-      color: #4a4a4a;
-    }
-    #scoreRight::after {
-      content: "";
-    }
-  }
-
-  /* Мобильная версия */
-  @media (max-width: 600px) {
-    body {
-      flex-direction: column;
-    }
-    #gameContainer {
-      width: 90vw;
-      height: 120vw;
       flex-direction: row;
       justify-content: space-between;
-      align-items: center;
-      padding: 0 10px;
-    }
-    canvas {
-      width: 70vw !important;
-      height: 120vw !important;
-      border-radius: 20px;
-    }
-    #scoreContainer {
-      top: auto;
-      bottom: 10px;
-      width: auto;
-      height: 100%;
-      flex-direction: column;
-      justify-content: space-between;
-      left: 0;
-      right: 0;
-      pointer-events: none;
-      user-select: none;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: #4a4a4a;
-      display: flex;
-      position: absolute;
+      padding: 0 20px;
       width: 100%;
-      padding: 0 10px;
     }
     #scoreLeft, #scoreRight {
       flex: 1;
       text-align: center;
       margin: 0;
     }
-    #scoreLeft {
-      order: 1;
-      text-align: left;
-    }
-    #scoreRight {
-      order: 2;
-      text-align: right;
-    }
-    #scoreLeft::after, #scoreRight::after {
+    #scoreLeft::after {
       content: "";
     }
     #instructions {
       display: none;
     }
     #timer {
-      top: 10px;
-      bottom: auto;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #4a4a4a;
-      position: absolute;
-      width: 100%;
-      text-align: center;
-      pointer-events: none;
-      user-select: none;
+      top: 50px;
     }
   }
 </style>
@@ -175,7 +126,6 @@
 (() => {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const container = document.getElementById('gameContainer');
   const scoreLeftDiv = document.getElementById('scoreLeft');
   const scoreRightDiv = document.getElementById('scoreRight');
   const timerDiv = document.getElementById('timer');
@@ -218,9 +168,6 @@
 
   const keys = {};
 
-  let scaleX = 1;
-  let scaleY = 1;
-
   // Таймер 2 минуты (120 секунд)
   let roundDuration = 120;
   let roundStartTime = Date.now();
@@ -232,26 +179,6 @@
     } while (newColor === ball.color);
     ball.color = newColor;
   }
-
-  function resize() {
-    const rect = container.getBoundingClientRect();
-    canvas.width = baseWidth;
-    canvas.height = baseHeight;
-
-    scaleX = rect.width / baseWidth;
-    scaleY = rect.height / baseHeight;
-
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-
-    leftPaddle.y = Math.min(leftPaddle.y, baseHeight - paddleHeight);
-    rightPaddle.y = Math.min(rightPaddle.y, baseHeight - paddleHeight);
-    ball.x = baseWidth / 2;
-    ball.y = baseHeight / 2;
-  }
-
-  window.addEventListener('resize', resize);
-  resize();
 
   window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
@@ -279,15 +206,15 @@
 
   function getTouchRelativeY(touch) {
     const rect = canvas.getBoundingClientRect();
-    return (touch.clientY - rect.top) / scaleY;
+    return (touch.clientY - rect.top);
   }
 
   canvas.addEventListener('touchstart', e => {
     e.preventDefault();
     for (const touch of e.changedTouches) {
       const rect = canvas.getBoundingClientRect();
-      const xRel = (touch.clientX - rect.left) / scaleX;
-      if (xRel < baseWidth / 2) {
+      const xRel = (touch.clientX - rect.left);
+      if (xRel < rect.width / 2) {
         ongoingTouches[touch.identifier] = 'left';
       } else {
         ongoingTouches[touch.identifier] = 'right';
@@ -300,11 +227,16 @@
     for (const touch of e.changedTouches) {
       const paddleSide = ongoingTouches[touch.identifier];
       if (!paddleSide) continue;
-      const y = getTouchRelativeY(touch) - paddleHeight / 2;
+      const rect = canvas.getBoundingClientRect();
+      let y = touch.clientY - rect.top - paddleHeight / 2;
+      y = Math.max(0, Math.min(rect.height - paddleHeight, y));
+      // Преобразуем координаты касания в координаты канваса (учитывая масштаб)
+      const scaleY = baseHeight / rect.height;
+      const yGame = y * scaleY;
       if (paddleSide === 'left') {
-        leftPaddle.y = Math.max(0, Math.min(baseHeight - paddleHeight, y));
+        leftPaddle.y = yGame;
       } else if (paddleSide === 'right') {
-        rightPaddle.y = Math.max(0, Math.min(baseHeight - paddleHeight, y));
+        rightPaddle.y = yGame;
       }
     }
   }, { passive: false });
@@ -381,15 +313,25 @@
   }
 
   function drawPaddle(paddle) {
-    ctx.fillStyle = '#6c63ff';
+    const grad = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddleWidth, paddle.y + paddleHeight);
+    grad.addColorStop(0, '#6c63ff');
+    grad.addColorStop(1, '#4b47a1');
+
+    ctx.fillStyle = grad;
     ctx.lineJoin = 'round';
     ctx.lineWidth = 4;
     ctx.strokeStyle = '#4b47a1';
+    const radius = 10;
     ctx.beginPath();
-    ctx.moveTo(paddle.x, paddle.y);
-    ctx.lineTo(paddle.x + paddleWidth, paddle.y);
-    ctx.lineTo(paddle.x + paddleWidth, paddle.y + paddleHeight);
-    ctx.lineTo(paddle.x, paddle.y + paddleHeight);
+    ctx.moveTo(paddle.x + radius, paddle.y);
+    ctx.lineTo(paddle.x + paddleWidth - radius, paddle.y);
+    ctx.quadraticCurveTo(paddle.x + paddleWidth, paddle.y, paddle.x + paddleWidth, paddle.y + radius);
+    ctx.lineTo(paddle.x + paddleWidth, paddle.y + paddleHeight - radius);
+    ctx.quadraticCurveTo(paddle.x + paddleWidth, paddle.y + paddleHeight, paddle.x + paddleWidth - radius, paddle.y + paddleHeight);
+    ctx.lineTo(paddle.x + radius, paddle.y + paddleHeight);
+    ctx.quadraticCurveTo(paddle.x, paddle.y + paddleHeight, paddle.x, paddle.y + paddleHeight - radius);
+    ctx.lineTo(paddle.x, paddle.y + radius);
+    ctx.quadraticCurveTo(paddle.x, paddle.y, paddle.x + radius, paddle.y);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -397,11 +339,16 @@
 
   function drawBall() {
     ctx.fillStyle = ball.color;
-    ctx.strokeStyle = '#4b47a1';
-    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 3;
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#4b47a1';
+    ctx.lineWidth = 3;
     ctx.stroke();
   }
 
@@ -418,8 +365,6 @@
     timerDiv.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
     if (remaining <= 0) {
-      // Конец раунда — можно добавить логику остановки игры или перезапуска
-      // Для примера просто сбросим счёт и таймер
       scoreLeft = 0;
       scoreRight = 0;
       roundStartTime = Date.now();
@@ -450,10 +395,7 @@
       instructionsDiv.style.display = 'block';
     }
   }
-  window.addEventListener('resize', () => {
-    resize();
-    updateInstructionsVisibility();
-  });
+  window.addEventListener('resize', updateInstructionsVisibility);
   updateInstructionsVisibility();
 
   resetBall();

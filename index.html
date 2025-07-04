@@ -7,7 +7,7 @@
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
-    background: #f0f0f0;
+    background: #222; /* темный фон */
     font-family: Arial, sans-serif;
     user-select: none;
     overflow: hidden;
@@ -19,7 +19,7 @@
   #score {
     font-size: 32px;
     font-weight: bold;
-    color: #222;
+    color: #222; /* по умолчанию темный текст */
     margin: 10px 0 5px 0;
     user-select: none;
     display: flex;
@@ -111,9 +111,9 @@
   /* Мобильная версия: вертикальное растяжение и поворот */
   @media (max-width: 600px) {
     #gameContainer {
-      width: 80vw; /* уменьшили ширину */
+      width: 80vw;
       max-width: 400px;
-      aspect-ratio: 4 / 6.5; /* чуть уменьшили высоту */
+      aspect-ratio: 4 / 6.5;
       margin-top: 10px;
       margin-bottom: 10px;
     }
@@ -124,21 +124,18 @@
       max-width: none;
       max-height: none;
     }
-    /* Счёт с противоположным цветом */
+    /* В мобильной версии цвет счёта белый, без фона */
     #score {
+      color: #fff !important;
+      background: transparent !important;
       width: 140px;
       font-size: 28px;
       margin-bottom: 5px;
       position: relative;
       z-index: 50;
-      background: #fff;
-      color: #222;
-      padding: 5px 15px;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.3);
-    }
-    #menu h1 {
-      font-size: 24px;
+      padding: 0;
+      box-shadow: none;
+      border-radius: 0;
     }
   }
 </style>

@@ -1,0 +1,134 @@
+/* Сброс стилей */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  background: #87ceeb; /* голубое небо */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#game-container {
+  width: 90vw;
+  max-width: 600px;
+  height: 400px;
+  background: linear-gradient(135deg, #a0d468 0%, #6ab04c 100%);
+  border: 3px solid #333;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+#game {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 800px;
+  transform-style: preserve-3d;
+  overflow: visible;
+}
+
+/* Изометрическая дорожка */
+#ground {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 200%;
+  height: 100px;
+  background: repeating-linear-gradient(
+    135deg,
+    #4caf50,
+    #4caf50 20px,
+    #388e3c 20px,
+    #388e3c 40px
+  );
+  transform: translateX(-50%) rotateX(60deg) translateZ(-50px);
+  transform-origin: center bottom;
+  box-shadow: inset 0 5px 10px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Игрок */
+#player {
+  position: absolute;
+  bottom: 100px;
+  left: 20%;
+  width: 40px;
+  height: 60px;
+  background: linear-gradient(135deg, #ff6f61, #d84315);
+  border-radius: 10px 10px 5px 5px;
+  box-shadow: 0 5px 0 #b33a0a;
+  transform: rotateX(60deg) translateZ(30px);
+  z-index: 10;
+  transition: bottom 0.2s ease;
+}
+
+/* Прыжок */
+#player.jump {
+  animation: jumpAnim 0.5s forwards;
+}
+
+@keyframes jumpAnim {
+  0% { bottom: 100px; }
+  50% { bottom: 180px; }
+  100% { bottom: 100px; }
+}
+
+/* Препятствие */
+#obstacle {
+  position: absolute;
+  bottom: 100px;
+  right: -50px;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #37474f, #263238);
+  border-radius: 5px;
+  box-shadow: 0 5px 0 #1c262b;
+  transform: rotateX(60deg) translateZ(30px);
+  z-index: 5;
+}
+
+/* Счёт */
+#score {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 18px;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+  z-index: 20;
+}
+
+/* Инструкции */
+#instructions {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+  z-index: 20;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  #game-container {
+    height: 300px;
+  }
+  #player {
+    width: 30px;
+    height: 45px;
+  }
+  #obstacle {
+    width: 30px;
+    height: 30px;
+  }
+}

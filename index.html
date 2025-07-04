@@ -28,6 +28,9 @@
     gap: 10px;
     width: 120px;
     z-index: 20;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
   }
   #score1 {
     flex: 1;
@@ -121,12 +124,18 @@
       max-width: none;
       max-height: none;
     }
+    /* Счёт с противоположным цветом */
     #score {
       width: 140px;
       font-size: 28px;
       margin-bottom: 5px;
       position: relative;
       z-index: 50;
+      background: #fff;
+      color: #222;
+      padding: 5px 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
     }
     #menu h1 {
       font-size: 24px;

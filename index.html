@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Ping Pong с сенсорным управлением и вертикальной мобильной версией</title>
+<title>Ping Pong с вертикальной мобильной версией и сенсорным управлением</title>
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
@@ -45,7 +45,7 @@
   #gameContainer {
     position: relative;
     width: 95vw;
-    max-width: 800px;
+    max-width: 600px;
     aspect-ratio: 7 / 4;
     transition: all 0.3s ease;
     background: #222;
@@ -95,14 +95,12 @@
     user-select: none;
   }
 
-  /* Мобильная версия: поворот игрового поля на 90 градусов */
+  /* Мобильная версия: вертикальное растяжение игрового поля */
   @media (max-width: 600px) {
     #gameContainer {
       width: 90vw;
       max-width: 400px;
-      aspect-ratio: 4 / 7;
-      transform: rotate(90deg);
-      transform-origin: center center;
+      aspect-ratio: 4 / 7; /* вертикальное соотношение */
       margin-top: 20px;
       margin-bottom: 20px;
     }
@@ -169,9 +167,10 @@
   const keys = {};
 
   // Для сенсорного управления
+  // В мобильной версии: игрок 1 — нижняя половина экрана, игрок 2 — верхняя половина
   let touchPositions = {
-    leftY: null,
-    rightY: null
+    p1Y: null,
+    p2Y: null
   };
 
   // Режим игры: 'pvp' или 'pvbot'
@@ -223,17 +222,14 @@
   function update() {
     // --- Управление игрока 1 ---
     if (isMobile()) {
-      // Сенсорное управление: левая половина экрана
-      if (touchPositions.leftY !== null) {
-        // Центр ракетки
+      if (touchPositions.p1Y !== null) {
         let center = paddle1.y + paddle1.height / 2;
-        let diff = touchPositions.leftY - center;
+        let diff = touchPositions.p1Y - center;
         paddle1.dy = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
       } else {
         paddle1.dy = 0;
       }
     } else {
-      // Клавиатура W/S
       if (keys['KeyW']) {
         paddle1.dy = -PADDLE_SPEED;
       } else if (keys['KeyS']) {
@@ -248,16 +244,14 @@
     // --- Управление игрока 2 ---
     if (gameMode === 'pvp') {
       if (isMobile()) {
-        // Сенсорное управление: правая половина экрана
-        if (touchPositions.rightY !== null) {
+        if (touchPositions.p2Y !== null) {
           let center = paddle2.y + paddle2.height / 2;
-          let diff = touchPositions.rightY - center;
+          let diff = touchPositions.p2Y - center;
           paddle2.dy = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
         } else {
           paddle2.dy = 0;
         }
       } else {
-        // Клавиатура стрелки вверх/вниз
         if (keys['ArrowUp']) {
           paddle2.dy = -PADDLE_SPEED;
         } else if (keys['ArrowDown']) {
@@ -390,26 +384,27 @@
 
   function handleTouch(e) {
     e.preventDefault();
-    // Сбросим позиции
-    touchPositions.leftY = null;
-    touchPositions.rightY = null;
+
+    // Получаем размеры канваса и позицию
+    const rect = canvas.getBoundingClientRect();
+
+    // Сбросим позиции, если нет касаний для соответствующих игроков
+    touchPositions.p1Y = null;
+    touchPositions.p2Y = null;
 
     for (let touch of e.touches) {
-      const rect = canvas.getBoundingClientRect();
-      // Координаты касания относительно канваса
       let x = touch.clientX - rect.left;
       let y = touch.clientY - rect.top;
 
-      // Если мобильная версия с поворотом, координаты канваса визуально повернуты,
-      // но логика канваса не меняется, поэтому для удобства можно использовать координаты как есть.
-
-      if (x < rect.width / 2) {
-        // Левая половина — игрок 1
-        touchPositions.leftY = y * (BASE_HEIGHT / rect.height);
+      // Определяем, к какой половине экрана относится касание по вертикали
+      if (y > rect.height / 2) {
+        // Нижняя половина — игрок 1
+        // Преобразуем координату y к логической системе канваса
+        touchPositions.p1Y = y * (BASE_HEIGHT / rect.height);
       } else {
-        // Правая половина — игрок 2 (если PvP)
+        // Верхняя половина — игрок 2 (если PvP)
         if (gameMode === 'pvp') {
-          touchPositions.rightY = y * (BASE_HEIGHT / rect.height);
+          touchPositions.p2Y = y * (BASE_HEIGHT / rect.height);
         }
       }
     }
@@ -417,10 +412,9 @@
 
   function handleTouchEnd(e) {
     e.preventDefault();
-    // Если нет касаний — сбросить позиции
     if (e.touches.length === 0) {
-      touchPositions.leftY = null;
-      touchPositions.rightY = null;
+      touchPositions.p1Y = null;
+      touchPositions.p2Y = null;
     } else {
       handleTouch(e);
     }

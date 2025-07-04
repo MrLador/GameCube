@@ -3,868 +3,130 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Игры: Пинпонг, Сапёр и Гонки с палитрами</title>
+  <title>Меню игр в стиле пиксель-арт</title>
+  <!-- Подключаем пиксельный шрифт -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
   <style>
-    /* ... (тот же CSS, что и в предыдущем ответе, для краткости не повторяю) */
-    /* Вставьте сюда CSS из предыдущего ответа */
+    /* Сброс стилей */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1b2735, #090a0f);
+      font-family: 'Press Start 2P', cursive;
+      color: #00ff00;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 40px;
+      text-shadow:
+        2px 2px 0 #0f0,
+        4px 4px 0 #060;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .game-button {
+      background: #111;
+      border: 4px solid #00ff00;
+      border-radius: 8px;
+      padding: 20px 30px;
+      width: 200px;
+      text-align: center;
+      color: #00ff00;
+      font-size: 0.8rem;
+      cursor: pointer;
+      box-shadow:
+        0 0 10px #00ff00,
+        inset 0 0 5px #00ff00;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      position: relative;
+    }
+
+    .game-button::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      border: 2px dashed #00ff00;
+      border-radius: 6px;
+      pointer-events: none;
+      animation: dash 4s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: 1000;
+      }
+    }
+
+    .game-button:hover {
+      transform: scale(1.1);
+      box-shadow:
+        0 0 20px #00ff00,
+        inset 0 0 10px #00ff00;
+      background: #002200;
+      color: #aaffaa;
+    }
+
+    .game-button:active {
+      transform: scale(0.95);
+      box-shadow:
+        0 0 5px #00ff00,
+        inset 0 0 3px #00ff00;
+      background: #004400;
+      color: #ccffcc;
+    }
+
+    /* Иконки пиксель-арт (примитивные) */
+    .icon {
+      display: block;
+      margin: 0 auto 10px;
+      width: 48px;
+      height: 48px;
+      image-rendering: pixelated;
+    }
+
   </style>
 </head>
 <body>
-  <!-- Меню выбора игры -->
-  <div id="menu">
-    <h1>Выберите игру</h1>
-    <button id="btn-pong" type="button">Пинпонг</button>
-    <button id="btn-minesweeper" type="button">Сапёр</button>
-    <button id="btn-racing" type="button">Гонки</button>
-
-    <div id="settings" aria-label="Настройки цветовой палитры">
-      <label for="palette-select">Цветовая палитра:</label>
-      <select id="palette-select" title="Выберите цветовую палитру" aria-describedby="palette-desc">
-        <option value="random">Случайный (по умолчанию)</option>
-        <option value="default">Классическая</option>
-        <option value="sunset">Закат</option>
-        <option value="ocean">Океан</option>
-        <option value="forest">Лес</option>
-        <option value="neon">Неон</option>
-      </select>
-      <div id="palette-desc" style="font-size:0.9rem; margin-top:6px; color:#aaa;">
-        Выберите цветовую палитру для интерфейса и игр.
-      </div>
-    </div>
-  </div>
-
-  <!-- Пинпонг -->
-  <div id="pong-container" class="game-wrapper" role="main" aria-label="Игра Пинпонг">
-    <div id="game-container">
-      <button id="pause-btn" title="Пауза" type="button" aria-pressed="false">Пауза</button>
-      <button id="mode-btn" title="Переключить режим" type="button">Режим: ПК</button>
-      <button id="pong-back-btn" title="Вернуться в меню" type="button">Меню</button>
-      <div id="score" aria-live="polite" aria-atomic="true">0 : 0</div>
-      <canvas id="pong" width="800" height="500" aria-label="Игровое поле Пинпонг"></canvas>
-
-      <div id="nickname-overlay" role="dialog" aria-modal="true" aria-labelledby="nickname-label" style="display:flex;">
-        <input type="text" id="nickname-input" placeholder="Введите ваш ник" maxlength="15" aria-describedby="nickname-desc" />
-        <div id="nickname-label" style="position:absolute; left:-9999px;">Введите ник игрока</div>
-        <div id="nickname-desc" style="position:absolute; left:-9999px;">Введите ник для рейтинга</div>
-        <button id="start-btn" type="button">Начать игру</button>
-      </div>
-    </div>
-
-    <div id="rating" aria-label="Рейтинг игроков">
-      <h2>Рейтинг игроков</h2>
-      <table>
-        <thead>
-          <tr><th>Место</th><th>Ник</th><th>Победы</th></tr>
-        </thead>
-        <tbody id="rating-body">
-          <!-- Рейтинг -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Сапёр -->
-  <div id="minesweeper-container" class="game-wrapper" role="main" aria-label="Игра Сапёр">
-    <div id="ms-header">
-      <div id="ms-status" aria-live="polite" aria-atomic="true">Мин: 10</div>
-      <button id="ms-reset-btn" type="button">Новая игра</button>
-      <button id="ms-back-btn" type="button">Меню</button>
-    </div>
-    <div id="ms-board" role="grid" aria-label="Игровое поле Сапёр"></div>
-  </div>
-
-  <!-- Гонки -->
-  <div id="racing-container" class="game-wrapper" role="main" aria-label="Игра Гонки">
-    <canvas id="racing-canvas" width="400" height="600" aria-label="Игровое поле Гонки"></canvas>
-    <div id="racing-info" aria-live="polite" aria-atomic="true">Пройдено: 0 м (0.00 км)</div>
-    <button id="racing-back-btn" type="button">Меню</button>
-  </div>
-
-  <script>
-    // --- ПАЛИТРЫ ---
-    const palettes = {
-      default: {
-        '--bg-color': '#000000',
-        '--text-color': '#ffffff',
-        '--btn-bg': '#0a84ff',
-        '--btn-bg-hover': '#0066cc',
-        '--game-bg': '#222222',
-        '--paddle-color': '#ffffff',
-        '--ball-color': '#ffffff',
-        '--net-color': '#ffffff',
-        '--rating-bg': '#111111',
-        '--rating-border': '#ffffff',
-        '--ms-cell-bg': '#555555',
-        '--ms-cell-revealed-bg': '#bbbbbb',
-        '--ms-cell-flag-color': '#f00',
-        '--ms-cell-text-color': 'black'
-      },
-      sunset: {
-        '--bg-color': '#2c1a1a',
-        '--text-color': '#ffd6ba',
-        '--btn-bg': '#ff6f61',
-        '--btn-bg-hover': '#e65b50',
-        '--game-bg': '#3e2f2f',
-        '--paddle-color': '#ffb997',
-        '--ball-color': '#ff6f61',
-        '--net-color': '#ffb997',
-        '--rating-bg': '#4a3a3a',
-        '--rating-border': '#ffb997',
-        '--ms-cell-bg': '#7a4e4e',
-        '--ms-cell-revealed-bg': '#ffd6ba',
-        '--ms-cell-flag-color': '#ff6f61',
-        '--ms-cell-text-color': '#4a2c2c'
-      },
-      ocean: {
-        '--bg-color': '#001f3f',
-        '--text-color': '#a7c7e7',
-        '--btn-bg': '#0074d9',
-        '--btn-bg-hover': '#005fa3',
-        '--game-bg': '#003366',
-        '--paddle-color': '#7fdbff',
-        '--ball-color': '#39cccc',
-        '--net-color': '#7fdbff',
-        '--rating-bg': '#00264d',
-        '--rating-border': '#7fdbff',
-        '--ms-cell-bg': '#005580',
-        '--ms-cell-revealed-bg': '#a7c7e7',
-        '--ms-cell-flag-color': '#39cccc',
-        '--ms-cell-text-color': '#00334d'
-      },
-      forest: {
-        '--bg-color': '#0b3d0b',
-        '--text-color': '#c6f6c6',
-        '--btn-bg': '#2ecc40',
-        '--btn-bg-hover': '#27ae34',
-        '--game-bg': '#145214',
-        '--paddle-color': '#a3d9a5',
-        '--ball-color': '#2ecc40',
-        '--net-color': '#a3d9a5',
-        '--rating-bg': '#1e5a1e',
-        '--rating-border': '#a3d9a5',
-        '--ms-cell-bg': '#2a6f2a',
-        '--ms-cell-revealed-bg': '#c6f6c6',
-        '--ms-cell-flag-color': '#27ae34',
-        '--ms-cell-text-color': '#144214'
-      },
-      neon: {
-        '--bg-color': '#0f0f0f',
-        '--text-color': '#39ff14',
-        '--btn-bg': '#39ff14',
-        '--btn-bg-hover': '#2ecc40',
-        '--game-bg': '#121212',
-        '--paddle-color': '#39ff14',
-        '--ball-color': '#ff00ff',
-        '--net-color': '#39ff14',
-        '--rating-bg': '#1a1a1a',
-        '--rating-border': '#39ff14',
-        '--ms-cell-bg': '#222222',
-        '--ms-cell-revealed-bg': '#39ff14',
-        '--ms-cell-flag-color': '#ff00ff',
-        '--ms-cell-text-color': '#121212'
-      }
-    };
-
-    function applyPalette(name) {
-      const palette = palettes[name] || palettes.default;
-      for (const varName in palette) {
-        document.documentElement.style.setProperty(varName, palette[varName]);
-      }
-    }
-
-    const paletteSelect = document.getElementById('palette-select');
-    function savePalette(name) {
-      localStorage.setItem('selectedPalette', name);
-    }
-    function loadPalette() {
-      const saved = localStorage.getItem('selectedPalette');
-      if (saved && (saved === 'random' || palettes[saved])) {
-        return saved;
-      }
-      return 'random';
-    }
-
-    function getRandomPalette(exclude = ['random']) {
-      const keys = Object.keys(palettes).filter(k => !exclude.includes(k));
-      return keys[Math.floor(Math.random() * keys.length)];
-    }
-
-    function applySelectedPalette(name) {
-      if (name === 'random') {
-        const randomPal = getRandomPalette();
-        applyPalette(randomPal);
-        return randomPal;
-      } else {
-        applyPalette(name);
-        return name;
-      }
-    }
-
-    let currentPalette = loadPalette();
-    paletteSelect.value = currentPalette;
-    if (currentPalette === 'random') {
-      currentPalette = applySelectedPalette('random');
-    } else {
-      applyPalette(currentPalette);
-    }
-
-    paletteSelect.addEventListener('change', () => {
-      const val = paletteSelect.value;
-      if (val === 'random') {
-        currentPalette = applySelectedPalette('random');
-      } else {
-        currentPalette = val;
-        applyPalette(val);
-      }
-      savePalette(val);
-    });
-
-    // --- МЕНЮ ---
-    const menu = document.getElementById('menu');
-    const btnPong = document.getElementById('btn-pong');
-    const btnMinesweeper = document.getElementById('btn-minesweeper');
-    const btnRacing = document.getElementById('btn-racing');
-
-    const pongContainer = document.getElementById('pong-container');
-    const minesweeperContainer = document.getElementById('minesweeper-container');
-    const racingContainer = document.getElementById('racing-container');
-
-    function showMenu() {
-      menu.style.display = 'flex';
-      pongContainer.style.display = 'none';
-      minesweeperContainer.style.display = 'none';
-      racingContainer.style.display = 'none';
-      racingGame.stop();
-      pongGame.stop();
-      minesweeperGame.stop();
-    }
-
-    btnPong.onclick = () => {
-      menu.style.display = 'none';
-      minesweeperContainer.style.display = 'none';
-      racingContainer.style.display = 'none';
-      pongContainer.style.display = 'flex';
-      pongGame.start();
-    };
-    btnMinesweeper.onclick = () => {
-      menu.style.display = 'none';
-      pongContainer.style.display = 'none';
-      racingContainer.style.display = 'none';
-      minesweeperContainer.style.display = 'flex';
-      minesweeperGame.start();
-    };
-    btnRacing.onclick = () => {
-      menu.style.display = 'none';
-      pongContainer.style.display = 'none';
-      minesweeperContainer.style.display = 'none';
-      racingContainer.style.display = 'flex';
-      racingGame.start();
-    };
-
-    // --- ПИНПОНГ ---
-    const pongGame = (function(){
-      const canvas = document.getElementById('pong');
-      const ctx = canvas.getContext('2d');
-
-      const paddleWidth = 10;
-      const paddleHeight = 100;
-      const ballRadius = 10;
-
-      let playerY, botY, ballX, ballY;
-      let ballSpeedX, ballSpeedY;
-
-      const paddleSpeed = 7;
-
-      let playerScore = 0;
-      let botScore = 0;
-
-      let upPressed = false;
-      let downPressed = false;
-
-      let isPaused = false;
-      let gameStarted = false;
-
-      let hitCount = 0;
-
-      let playerNick = '';
-
-      let rating = [];
-
-      let gameMode = 'pc';
-
-      let touchStartY = null;
-      let playerTouchY = null;
-
-      const scoreEl = document.getElementById('score');
-      const pauseBtn = document.getElementById('pause-btn');
-      const modeBtn = document.getElementById('mode-btn');
-      const nicknameOverlay = document.getElementById('nickname-overlay');
-      const nicknameInput = document.getElementById('nickname-input');
-      const startBtn = document.getElementById('start-btn');
-      const ratingBody = document.getElementById('rating-body');
-      const pongBackBtn = document.getElementById('pong-back-btn');
-
-      function initPositions() {
-        playerY = (canvas.height - paddleHeight) / 2;
-        botY = (canvas.height - paddleHeight) / 2;
-        ballX = canvas.width / 2;
-        ballY = canvas.height / 2;
-        ballSpeedX = 5 * (Math.random() > 0.5 ? 1 : -1);
-        ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
-        hitCount = 0;
-      }
-
-      function setupKeyboardControls() {
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
-      }
-      function removeKeyboardControls() {
-        document.removeEventListener('keydown', onKeyDown);
-        document.removeEventListener('keyup', onKeyUp);
-      }
-      function onKeyDown(e) {
-        if (!gameStarted || isPaused) return;
-        if (e.key === 'ArrowUp') upPressed = true;
-        if (e.key === 'ArrowDown') downPressed = true;
-      }
-      function onKeyUp(e) {
-        if (!gameStarted || isPaused) return;
-        if (e.key === 'ArrowUp') upPressed = false;
-        if (e.key === 'ArrowDown') downPressed = false;
-      }
-
-      function setupTouchControls() {
-        canvas.addEventListener('touchstart', onTouchStart, {passive: false});
-        canvas.addEventListener('touchmove', onTouchMove, {passive: false});
-        canvas.addEventListener('touchend', onTouchEnd, {passive: false});
-      }
-      function removeTouchControls() {
-        canvas.removeEventListener('touchstart', onTouchStart);
-        canvas.removeEventListener('touchmove', onTouchMove);
-        canvas.removeEventListener('touchend', onTouchEnd);
-      }
-      function onTouchStart(e) {
-        if (!gameStarted || isPaused) return;
-        const touch = e.touches[0];
-        if (touch.clientX < canvas.getBoundingClientRect().left + canvas.width / 2) {
-          touchStartY = touch.clientY;
-          playerTouchY = playerY + paddleHeight / 2;
-          e.preventDefault();
-        }
-      }
-      function onTouchMove(e) {
-        if (!gameStarted || isPaused) return;
-        if (touchStartY === null) return;
-        const touch = e.touches[0];
-        if (touch.clientX < canvas.getBoundingClientRect().left + canvas.width / 2) {
-          const deltaY = touch.clientY - touchStartY;
-          playerY = playerTouchY + deltaY;
-          if (playerY < 0) playerY = 0;
-          if (playerY > canvas.height - paddleHeight) playerY = canvas.height - paddleHeight;
-          e.preventDefault();
-        }
-      }
-      function onTouchEnd(e) {
-        touchStartY = null;
-        playerTouchY = null;
-      }
-
-      function toggleGameMode() {
-        if (gameMode === 'pc') {
-          gameMode = 'mobile';
-          modeBtn.textContent = 'Режим: Мобильный';
-          canvas.width = 400;
-          canvas.height = 600;
-          resetGame();
-          removeKeyboardControls();
-          setupTouchControls();
-        } else {
-          gameMode = 'pc';
-          modeBtn.textContent = 'Режим: ПК';
-          canvas.width = 800;
-          canvas.height = 500;
-          resetGame();
-          removeTouchControls();
-          setupKeyboardControls();
-        }
-      }
-
-      pauseBtn.addEventListener('click', () => {
-        if (!gameStarted) return;
-        isPaused = !isPaused;
-        pauseBtn.textContent = isPaused ? 'Продолжить' : 'Пауза';
-        pauseBtn.setAttribute('aria-pressed', isPaused.toString());
-      });
-
-      modeBtn.addEventListener('click', () => {
-        toggleGameMode();
-      });
-
-      startBtn.addEventListener('click', () => {
-        const nick = nicknameInput.value.trim();
-        if (nick.length === 0) {
-          alert('Пожалуйста, введите ник.');
-          return;
-        }
-        playerNick = nick;
-        nicknameOverlay.style.display = 'none';
-        gameStarted = true;
-        resetGame();
-        if (gameMode === 'pc') {
-          setupKeyboardControls();
-        } else {
-          setupTouchControls();
-        }
-        gameLoop();
-      });
-
-      pongBackBtn.addEventListener('click', () => {
-        gameStarted = false;
-        isPaused = false;
-        removeKeyboardControls();
-        removeTouchControls();
-        showMenu();
-      });
-
-      function drawRect(x, y, w, h, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, w, h);
-      }
-
-      function drawCircle(x, y, r, color) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2, false);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      function drawNet() {
-        const netWidth = 4;
-        const netHeight = 20;
-        const netColor = getComputedStyle(document.documentElement).getPropertyValue('--net-color').trim() || '#fff';
-        for (let i = 0; i < canvas.height; i += netHeight * 2) {
-          drawRect((canvas.width - netWidth) / 2, i, netWidth, netHeight, netColor);
-        }
-      }
-
-      function resetBall(direction = 1) {
-        ballX = canvas.width / 2;
-        ballY = canvas.height / 2;
-        ballSpeedX = 5 * direction;
-        ballSpeedY = 3 * (Math.random() > 0.5 ? 1 : -1);
-        hitCount = 0;
-      }
-
-      function resetGame() {
-        playerScore = 0;
-        botScore = 0;
-        updateScore();
-        playerY = (canvas.height - paddleHeight) / 2;
-        botY = (canvas.height - paddleHeight) / 2;
-        resetBall(1);
-        isPaused = false;
-        pauseBtn.textContent = 'Пауза';
-        pauseBtn.setAttribute('aria-pressed', 'false');
-      }
-
-      function updateScore() {
-        scoreEl.textContent = `${playerScore} : ${botScore}`;
-      }
-
-      function increaseBallSpeed() {
-        ballSpeedX *= 1.1;
-        ballSpeedY *= 1.1;
-      }
-
-      function update() {
-        if (isPaused) return;
-
-        if (gameMode === 'pc') {
-          if (upPressed && playerY > 0) playerY -= paddleSpeed;
-          if (downPressed && playerY < canvas.height - paddleHeight) playerY += paddleSpeed;
-        }
-
-        ballX += ballSpeedX;
-        ballY += ballSpeedY;
-
-        if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
-          ballSpeedY = -ballSpeedY;
-        }
-
-        if (
-          ballX - ballRadius < paddleWidth &&
-          ballY > playerY &&
-          ballY < playerY + paddleHeight
-        ) {
-          ballSpeedX = -ballSpeedX;
-          let deltaY = ballY - (playerY + paddleHeight / 2);
-          ballSpeedY = deltaY * 0.3;
-
-          hitCount++;
-          if (hitCount % 2 === 0) {
-            increaseBallSpeed();
-          }
-        }
-
-        if (
-          ballX + ballRadius > canvas.width - paddleWidth &&
-          ballY > botY &&
-          ballY < botY + paddleHeight
-        ) {
-          ballSpeedX = -ballSpeedX;
-          let deltaY = ballY - (botY + paddleHeight / 2);
-          ballSpeedY = deltaY * 0.3;
-
-          hitCount++;
-          if (hitCount % 2 === 0) {
-            increaseBallSpeed();
-          }
-        }
-
-        if (ballX - ballRadius < 0) {
-          botScore++;
-          updateScore();
-          if (checkGameOver()) return;
-          resetBall(1);
-        } else if (ballX + ballRadius > canvas.width) {
-          playerScore++;
-          updateScore();
-          if (checkGameOver()) return;
-          resetBall(-1);
-        }
-
-        const botCenter = botY + paddleHeight / 2;
-        if (botCenter < ballY - 35) {
-          botY += paddleSpeed * 0.6;
-        } else if (botCenter > ballY + 35) {
-          botY -= paddleSpeed * 0.6;
-        }
-
-        if (botY < 0) botY = 0;
-        if (botY > canvas.height - paddleHeight) botY = canvas.height - paddleHeight;
-      }
-
-      function draw() {
-        drawRect(0, 0, canvas.width, canvas.height, getComputedStyle(document.documentElement).getPropertyValue('--game-bg').trim() || '#222');
-        drawNet();
-        drawRect(0, playerY, paddleWidth, paddleHeight, getComputedStyle(document.documentElement).getPropertyValue('--paddle-color').trim() || '#fff');
-        drawRect(canvas.width - paddleWidth, botY, paddleWidth, paddleHeight, getComputedStyle(document.documentElement).getPropertyValue('--paddle-color').trim() || '#fff');
-        drawCircle(ballX, ballY, ballRadius, getComputedStyle(document.documentElement).getPropertyValue('--ball-color').trim() || '#fff');
-      }
-
-      function checkGameOver() {
-        const maxScore = 10;
-        if (playerScore >= maxScore || botScore >= maxScore) {
-          isPaused = true;
-          pauseBtn.textContent = 'Пауза';
-          setTimeout(() => {
-            alert(playerScore > botScore ? `Поздравляем, ${playerNick}! Вы выиграли!` : 'Вы проиграли. Следующий игрок, введите ник.');
-            if (playerScore > botScore) {
-              updateRating(playerNick);
-            }
-            nicknameInput.value = '';
-            nicknameOverlay.style.display = 'flex';
-            gameStarted = false;
-            removeKeyboardControls();
-            removeTouchControls();
-          }, 100);
-          return true;
-        }
-        return false;
-      }
-
-      function updateRating(nick) {
-        const playerEntry = rating.find(r => r.nick === nick);
-        if (playerEntry) {
-          playerEntry.wins++;
-        } else {
-          rating.push({ nick: nick, wins: 1 });
-        }
-        rating.sort((a, b) => b.wins - a.wins);
-        renderRating();
-      }
-
-      function renderRating() {
-        ratingBody.innerHTML = '';
-        rating.forEach((player, index) => {
-          const tr = document.createElement('tr');
-          const placeTd = document.createElement('td');
-          placeTd.textContent = index + 1;
-          const nickTd = document.createElement('td');
-          nickTd.textContent = player.nick;
-          const winsTd = document.createElement('td');
-          winsTd.textContent = player.wins;
-          tr.appendChild(placeTd);
-          tr.appendChild(nickTd);
-          tr.appendChild(winsTd);
-          ratingBody.appendChild(tr);
-        });
-      }
-
-      function gameLoop() {
-        if (!gameStarted) return;
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
-      }
-
-      function start() {
-        if (gameStarted) return;
-        nicknameOverlay.style.display = 'flex';
-        gameStarted = false;
-        isPaused = false;
-        pauseBtn.textContent = 'Пауза';
-        pauseBtn.setAttribute('aria-pressed', 'false');
-      }
-
-      function stop() {
-        gameStarted = false;
-        isPaused = false;
-        removeKeyboardControls();
-        removeTouchControls();
-      }
-
-      return {
-        start,
-        stop
-      };
-    })();
-
-    // --- САПЁР ---
-    const minesweeperGame = (function(){
-      const boardSize = 9;
-      const mineCount = 10;
-
-      let board = [];
-      let revealedCount = 0;
-      let flagsCount = 0;
-      let gameOver = false;
-      let firstClick = true;
-
-      const msBoard = document.getElementById('ms-board');
-      const msStatus = document.getElementById('ms-status');
-      const msResetBtn = document.getElementById('ms-reset-btn');
-      const msBackBtn = document.getElementById('ms-back-btn');
-
-      function init() {
-        gameOver = false;
-        revealedCount = 0;
-        flagsCount = 0;
-        firstClick = true;
-        msStatus.textContent = `Мин: ${mineCount}`;
-        board = [];
-        msBoard.innerHTML = '';
-        msBoard.style.gridTemplateColumns = `repeat(${boardSize}, 44px)`;
-        msBoard.style.gridTemplateRows = `repeat(${boardSize}, 44px)`;
-
-        for(let i=0; i<boardSize; i++) {
-          board[i] = [];
-          for(let j=0; j<boardSize; j++) {
-            board[i][j] = {
-              mine: false,
-              revealed: false,
-              flagged: false,
-              adjacent: 0,
-              element: null
-            };
-            const cell = document.createElement('div');
-            cell.classList.add('ms-cell');
-            cell.dataset.row = i;
-            cell.dataset.col = j;
-            cell.setAttribute('role', 'gridcell');
-            msBoard.appendChild(cell);
-            board[i][j].element = cell;
-          }
-        }
-
-        msBoard.addEventListener('click', onCellClick);
-        msBoard.addEventListener('contextmenu', onCellRightClick);
-
-        msResetBtn.onclick = () => {
-          init();
-        };
-        msBackBtn.onclick = () => {
-          msBoard.removeEventListener('click', onCellClick);
-          msBoard.removeEventListener('contextmenu', onCellRightClick);
-          showMenu();
-        };
-      }
-
-      function placeMinesSafe(firstRow, firstCol) {
-        let placed = 0;
-        const safeCells = new Set();
-
-        for(let dr=-1; dr<=1; dr++) {
-          for(let dc=-1; dc<=1; dc++) {
-            const nr = firstRow + dr;
-            const nc = firstCol + dc;
-            if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
-              safeCells.add(nr + ',' + nc);
-            }
-          }
-        }
-
-        while(placed < mineCount) {
-          const r = Math.floor(Math.random() * boardSize);
-          const c = Math.floor(Math.random() * boardSize);
-          if (!board[r][c].mine && !safeCells.has(r + ',' + c)) {
-            board[r][c].mine = true;
-            placed++;
-          }
-        }
-      }
-
-      function calculateAdjacents() {
-        for(let r=0; r<boardSize; r++) {
-          for(let c=0; c<boardSize; c++) {
-            if (board[r][c].mine) {
-              board[r][c].adjacent = -1;
-              continue;
-            }
-            let count = 0;
-            for(let dr=-1; dr<=1; dr++) {
-              for(let dc=-1; dc<=1; dc++) {
-                if (dr === 0 && dc === 0) continue;
-                const nr = r + dr;
-                const nc = c + dc;
-                if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
-                  if (board[nr][nc].mine) count++;
-                }
-              }
-            }
-            board[r][c].adjacent = count;
-          }
-        }
-      }
-
-      function onCellClick(e) {
-        if (gameOver) return;
-        const cell = e.target;
-        if (!cell.classList.contains('ms-cell')) return;
-        const r = +cell.dataset.row;
-        const c = +cell.dataset.col;
-        const cellData = board[r][c];
-        if (cellData.flagged || cellData.revealed) return;
-
-        if (firstClick) {
-          placeMinesSafe(r, c);
-          calculateAdjacents();
-          firstClick = false;
-        }
-
-        revealCell(r, c);
-        checkWin();
-      }
-
-      function onCellRightClick(e) {
-        e.preventDefault();
-        if (gameOver) return;
-        const cell = e.target;
-        if (!cell.classList.contains('ms-cell')) return;
-        const r = +cell.dataset.row;
-        const c = +cell.dataset.col;
-        const cellData = board[r][c];
-        if (cellData.revealed) return;
-        if (cellData.flagged) {
-          cellData.flagged = false;
-          cell.classList.remove('flagged');
-          flagsCount--;
-        } else {
-          if (flagsCount < mineCount) {
-            cellData.flagged = true;
-            cell.classList.add('flagged');
-            flagsCount++;
-          }
-        }
-        msStatus.textContent = `Мин: ${mineCount - flagsCount}`;
-      }
-
-      function revealCell(r, c) {
-        const cellData = board[r][c];
-        if (cellData.revealed || cellData.flagged) return;
-        cellData.revealed = true;
-        revealedCount++;
-        cellData.element.classList.add('revealed');
-        if (cellData.mine) {
-          cellData.element.classList.add('mine');
-          gameOver = true;
-          revealAllMines();
-          msStatus.textContent = 'Вы проиграли!';
-          alert('Вы проиграли! Нажмите "Новая игра" для повторной попытки.');
-          return;
-        }
-        if (cellData.adjacent > 0) {
-          cellData.element.textContent = cellData.adjacent;
-          cellData.element.style.color = getNumberColor(cellData.adjacent);
-        } else {
-          for(let dr=-1; dr<=1; dr++) {
-            for(let dc=-1; dc<=1; dc++) {
-              if (dr === 0 && dc === 0) continue;
-              const nr = r + dr;
-              const nc = c + dc;
-              if (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize) {
-                revealCell(nr, nc);
-              }
-            }
-          }
-        }
-      }
-
-      function revealAllMines() {
-        for(let r=0; r<boardSize; r++) {
-          for(let c=0; c<boardSize; c++) {
-            if (board[r][c].mine) {
-              board[r][c].element.classList.add('revealed', 'mine');
-            }
-          }
-        }
-      }
-
-      function checkWin() {
-        if (gameOver) return;
-        if (revealedCount === boardSize*boardSize - mineCount) {
-          gameOver = true;
-          msStatus.textContent = 'Вы выиграли!';
-          alert('Поздравляем! Вы выиграли!');
-        }
-      }
-
-      function getNumberColor(num) {
-        switch(num) {
-          case 1: return 'blue';
-          case 2: return 'green';
-          case 3: return 'red';
-          case 4: return 'darkblue';
-          case 5: return 'brown';
-          case 6: return 'cyan';
-          case 7: return 'black';
-          case 8: return 'gray';
-          default: return 'black';
-        }
-      }
-
-      function start() {
-        init();
-      }
-
-      function stop() {
-        msBoard.removeEventListener('click', onCellClick);
-        msBoard.removeEventListener('contextmenu', onCellRightClick);
-      }
-
-      return {
-        start,
-        stop
-      };
-    })();
-
-    // --- ГОНКИ ---
-    // Код гонок из предыдущего ответа (оставляем без изменений)
-    // ... вставьте сюда код гонок из предыдущего ответа ...
-
-    // Для краткости не повторяю код гонок, он уже есть в предыдущем ответе.
-
-  </script>
+  <h1>Выберите игру</h1>
+  <nav>
+    <button class="game-button" onclick="alert('Запуск игры: Платформер')">
+      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Платформер" />
+      Платформер
+    </button>
+    <button class="game-button" onclick="alert('Запуск игры: Аркада')">
+      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Аркада" />
+      Аркада
+    </button>
+    <button class="game-button" onclick="alert('Запуск игры: РПГ')">
+      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="РПГ" />
+      РПГ
+    </button>
+    <button class="game-button" onclick="alert('Запуск игры: Головоломка')">
+      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Головоломка" />
+      Головоломка
+    </button>
+  </nav>
 </body>
 </html>

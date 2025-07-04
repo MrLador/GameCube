@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Пинпонг — Современный дизайн</title>
+  <title>Пинпонг — Современный дизайн с выбором режима</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
   <style>
-    /* Сброс */
     * {
       margin: 0; padding: 0; box-sizing: border-box;
     }
@@ -20,6 +19,7 @@
       min-height: 100vh;
       padding: 20px;
       user-select: none;
+      overflow: hidden;
     }
     h1 {
       margin-bottom: 10px;
@@ -27,38 +27,68 @@
       font-size: 2.5rem;
       text-shadow: 0 0 8px #00bfff88;
     }
-    #mode-select {
-      margin-bottom: 20px;
+    /* Контейнер кнопок выбора режима */
+    #mode-buttons {
+      position: fixed;
+      top: 20px;
+      left: 20px;
       display: flex;
-      gap: 20px;
+      gap: 12px;
+      z-index: 10;
     }
-    label {
+    .mode-btn {
+      background: #222;
+      border: 2px solid #00bfff;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 1.4rem;
       cursor: pointer;
-      font-size: 1.1rem;
-      user-select: none;
+      color: #00bfff;
+      box-shadow: 0 0 8px #00bfff88;
       display: flex;
       align-items: center;
       gap: 8px;
+      transition:
+        background 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+      user-select: none;
     }
-    input[type="radio"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
+    .mode-btn:hover {
+      background: #00bfff22;
+      box-shadow: 0 0 14px #00d4ffcc;
     }
-    button#start-btn {
+    .mode-btn.active {
+      background: #00bfff;
+      color: #121212;
+      border-color: #00a3cc;
+      box-shadow: 0 0 20px #00bfffee;
+    }
+    .mode-btn span.emoji {
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+    /* Кнопка рестарта */
+    #restart-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
       background: #00bfff;
       border: none;
-      padding: 10px 30px;
-      font-size: 1.1rem;
+      padding: 10px 20px;
+      font-size: 1rem;
       font-weight: 700;
       color: #121212;
-      border-radius: 8px;
+      border-radius: 12px;
       box-shadow: 0 0 12px #00bfffaa;
       cursor: pointer;
       transition: background 0.3s ease;
-      margin-bottom: 20px;
+      user-select: none;
+      display: none;
+      z-index: 10;
     }
-    button#start-btn:hover {
+    #restart-btn:hover {
       background: #0099cc;
       box-shadow: 0 0 20px #0099cccc;
     }
@@ -70,7 +100,7 @@
         inset 0 0 15px #00bfff44;
       image-rendering: auto;
       display: block;
-      margin-bottom: 20px;
+      margin-top: 80px;
     }
     .scoreboard {
       font-size: 2rem;
@@ -81,9 +111,10 @@
       gap: 80px;
       width: 100%;
       max-width: 640px;
-      margin-bottom: 20px;
+      margin: 20px 0 40px;
       color: #00bfff;
       text-shadow: 0 0 8px #00bfffaa;
+      user-select: none;
     }
     .scoreboard span {
       min-width: 50px;
@@ -96,6 +127,7 @@
       text-align: center;
       line-height: 1.4;
       margin-bottom: 40px;
+      user-select: none;
     }
     a.back-link {
       color: #00bfff;
@@ -103,6 +135,7 @@
       font-weight: 600;
       font-size: 1rem;
       transition: color 0.3s ease;
+      user-select: none;
     }
     a.back-link:hover {
       color: #0099cc;
@@ -112,26 +145,24 @@
 <body>
   <h1>Пинпонг</h1>
 
-  <div id="mode-select">
-    <label>
-      <input type="radio" name="mode" value="bot" checked />
-      Игра против бота
-    </label>
-    <label>
-      <input type="radio" name="mode" value="2p" />
-      Игра для двух игроков
-    </label>
+  <div id="mode-buttons" aria-label="Выбор режима игры">
+    <button class="mode-btn active" data-mode="bot" aria-pressed="true" title="Игра против бота">
+      <span class="emoji" aria-hidden="true">🤖</span> Бот
+    </button>
+    <button class="mode-btn" data-mode="2p" aria-pressed="false" title="Игра для двух игроков">
+      <span class="emoji" aria-hidden="true">👥</span> 2 Игрока
+    </button>
   </div>
 
-  <button id="start-btn">Начать игру</button>
+  <button id="restart-btn" aria-label="Перезапустить игру">↻ Перезапуск</button>
 
-  <canvas id="game" width="640" height="400" style="display:none;"></canvas>
+  <canvas id="game" width="640" height="400" aria-label="Игровое поле Пинпонг" role="img"></canvas>
 
-  <div class="scoreboard" style="display:none;">
+  <div class="scoreboard" aria-live="polite" aria-atomic="true">
     <span id="left-score">0</span> : <span id="right-score">0</span>
   </div>
 
-  <div class="instructions" style="display:none;">
+  <div class="instructions">
     Управление:<br />
     Левая ракетка: <strong>W</strong> (вверх), <strong>S</strong> (вниз) — только в режиме 2 игроков<br />
     Правая ракетка: <strong>↑</strong> (вверх), <strong>↓</strong> (вниз)
@@ -147,8 +178,8 @@
       const rightScoreEl = document.getElementById('right-score');
       const scoreboard = document.querySelector('.scoreboard');
       const instructions = document.querySelector('.instructions');
-      const startBtn = document.getElementById('start-btn');
-      const modeRadios = document.querySelectorAll('input[name="mode"]');
+      const modeButtons = document.querySelectorAll('.mode-btn');
+      const restartBtn = document.getElementById('restart-btn');
 
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
@@ -280,7 +311,6 @@
         ) {
           ball.x = leftPaddle.x + PADDLE_WIDTH;
           ball.dx = -ball.dx;
-          // Угол отскока
           let collidePoint = (ball.y + BALL_SIZE / 2) - (leftPaddle.y + PADDLE_HEIGHT / 2);
           ball.dy = collidePoint * 0.3;
         }
@@ -316,20 +346,15 @@
       }
 
       function draw() {
-        // Очистка
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-        // Сетка
         drawNet();
 
-        // Ракетки
         drawRect(leftPaddle.x, leftPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff');
         drawRect(rightPaddle.x, rightPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff');
 
-        // Мяч (круглый)
         drawCircle(ball.x + BALL_SIZE / 2, ball.y + BALL_SIZE / 2, BALL_SIZE / 2, '#00bfff');
 
-        // Счёт
         drawText(leftScore, WIDTH / 4, 50);
         drawText(rightScore, WIDTH * 3 / 4, 50);
       }
@@ -349,9 +374,27 @@
         keys[e.key.toLowerCase()] = false;
       });
 
-      // Запуск игры
-      startBtn.addEventListener('click', () => {
-        mode = document.querySelector('input[name="mode"]:checked').value;
+      // Выбор режима по кнопкам
+      modeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (gameStarted) return; // нельзя менять во время игры
+          modeButtons.forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          mode = btn.dataset.mode;
+          startGame();
+        });
+      });
+
+      // Кнопка рестарта
+      restartBtn.addEventListener('click', () => {
+        startGame();
+      });
+
+      function startGame() {
         leftScore = 0;
         rightScore = 0;
         updateScore();
@@ -363,12 +406,14 @@
         canvas.style.display = 'block';
         scoreboard.style.display = 'flex';
         instructions.style.display = 'block';
-        startBtn.style.display = 'none';
-        modeRadios.forEach(radio => radio.disabled = true);
+        restartBtn.style.display = 'inline-block';
 
         gameStarted = true;
         gameLoop();
-      });
+      }
+
+      // Инициализация: сразу запускаем игру с режимом по умолчанию
+      startGame();
     })();
   </script>
 </body>

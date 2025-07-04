@@ -3,100 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Меню игр в стиле пиксель-арт</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-  <style>
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-    }
-    body {
-      background: #222;
-      font-family: 'Press Start 2P', cursive;
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 40px;
-      color: #fff;
-      text-shadow:
-        1px 1px 0 #000,
-        2px 2px 0 #555;
-    }
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 24px;
-      justify-content: center;
-      max-width: 900px;
-      width: 100%;
-    }
-    .game-button {
-      background: #c0c0c0;
-      border: 4px solid #000;
-      padding: 20px 30px;
-      width: 200px;
-      text-align: center;
-      color: #000;
-      font-size: 0.75rem;
-      cursor: pointer;
-      user-select: none;
-      position: relative;
-      box-shadow:
-        inset 2px 2px 0 #fff,
-        inset -2px -2px 0 #888;
-      transition: background 0.15s ease, box-shadow 0.15s ease;
-      image-rendering: pixelated;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .game-button:hover {
-      background: #e0e0e0;
-      box-shadow:
-        inset 1px 1px 0 #fff,
-        inset -1px -1px 0 #aaa;
-    }
-    .game-button:active {
-      background: #a0a0a0;
-      box-shadow:
-        inset -2px -2px 0 #fff,
-        inset 2px 2px 0 #555;
-    }
-    .icon {
-      display: block;
-      margin-bottom: 12px;
-      width: 48px;
-      height: 48px;
-      image-rendering: pixelated;
-    }
-  </style>
+  <title>IsoRunner</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Выберите игру</h1>
-  <nav>
-    <a href="pingpong.html" class="game-button" aria-label="Пинпонг">
-      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Пинпонг" />
-      Пинпонг
-    </a>
-    <button class="game-button" disabled title="Игра в разработке">
-      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Аркада" />
-      Аркада
-    </button>
-    <button class="game-button" disabled title="Игра в разработке">
-      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="РПГ" />
-      РПГ
-    </button>
-    <button class="game-button" disabled title="Игра в разработке">
-      <img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Головоломка" />
-      Головоломка
-    </button>
-  </nav>
+  <div id="game-container">
+    <div id="game">
+      <div id="player"></div>
+      <div id="obstacle"></div>
+      <div id="ground"></div>
+    </div>
+    <div id="score">Счёт: 0</div>
+    <div id="instructions">Прыжок: пробел или тап</div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

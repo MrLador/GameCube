@@ -56,6 +56,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    /* Добавим белую рамку */
+    border: 3px solid white;
+    box-sizing: border-box;
   }
   #gameCanvas {
     display: block;
@@ -116,6 +119,7 @@
       aspect-ratio: 4 / 6.5;
       margin-top: 10px;
       margin-bottom: 10px;
+      border: 3px solid white; /* рамка видна и в моб версии */
     }
     #gameCanvas {
       transform: rotate(90deg);
@@ -172,9 +176,9 @@
 
   const BASE_WIDTH = 700;
   const BASE_HEIGHT = 400;
-  const PADDLE_WIDTH = 10;
-  const PADDLE_HEIGHT = 80;
-  const PADDLE_SPEED = 6;
+  const PADDLE_WIDTH = 80;  // в мобильной версии ракетки горизонтальные, ширина больше
+  const PADDLE_HEIGHT = 10;
+  const PADDLE_SPEED = 8;
   const BALL_RADIUS = 8;
   const BALL_SPEED = 5;
   const BALL_RESET_DELAY = 400; // уменьшенная задержка после очка
@@ -195,22 +199,43 @@
   }
 
   function initObjects() {
-    paddle1 = {
-      x: 10,
-      y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-      width: PADDLE_WIDTH,
-      height: PADDLE_HEIGHT,
-      dx: 0,
-      dy: 0
-    };
-    paddle2 = {
-      x: BASE_WIDTH - 10 - PADDLE_WIDTH,
-      y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-      width: PADDLE_WIDTH,
-      height: PADDLE_HEIGHT,
-      dx: 0,
-      dy: 0
-    };
+    if (isMobile()) {
+      // В мобильной версии ракетки горизонтальные, верхняя сверху, нижняя снизу
+      paddle1 = {
+        x: BASE_WIDTH / 2 - PADDLE_WIDTH / 2,
+        y: 10, // сверху
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        dx: 0,
+        dy: 0
+      };
+      paddle2 = {
+        x: BASE_WIDTH / 2 - PADDLE_WIDTH / 2,
+        y: BASE_HEIGHT - 10 - PADDLE_HEIGHT, // снизу
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+        dx: 0,
+        dy: 0
+      };
+    } else {
+      // ПК версия — вертикальные ракетки слева и справа
+      paddle1 = {
+        x: 10,
+        y: BASE_HEIGHT / 2 - 40,
+        width: 10,
+        height: 80,
+        dx: 0,
+        dy: 0
+      };
+      paddle2 = {
+        x: BASE_WIDTH - 20,
+        y: BASE_HEIGHT / 2 - 40,
+        width: 10,
+        height: 80,
+        dx: 0,
+        dy: 0
+      };
+    }
     resetBall(Math.random() < 0.5 ? 1 : -1);
     score1 = 0;
     score2 = 0;
@@ -249,30 +274,33 @@
 
     if (isMobile()) {
       // Мобильная версия: ракетки двигаются по X (горизонтально)
-      if (touchPositions.p1X !== null) {
-        let center = paddle1.x + paddle1.width / 2;
-        let diff = touchPositions.p1X - center;
-        paddle1.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
+      // Нижняя ракетка (paddle2) управляется касаниями в нижней половине экрана
+      if (touchPositions.p2X !== null) {
+        let center = paddle2.x + paddle2.width / 2;
+        let diff = touchPositions.p2X - center;
+        paddle2.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
       } else {
-        paddle1.dx = 0;
+        paddle2.dx = 0;
       }
-      paddle1.x = clamp(paddle1.x + paddle1.dx, 0, BASE_WIDTH - paddle1.width);
+      paddle2.x = clamp(paddle2.x + paddle2.dx, 0, BASE_WIDTH - paddle2.width);
 
+      // Верхняя ракетка (paddle1) управляется касаниями в верхней половине экрана
       if (gameMode === 'pvp') {
-        if (touchPositions.p2X !== null) {
-          let center = paddle2.x + paddle2.width / 2;
-          let diff = touchPositions.p2X - center;
-          paddle2.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
+        if (touchPositions.p1X !== null) {
+          let center = paddle1.x + paddle1.width / 2;
+          let diff = touchPositions.p1X - center;
+          paddle1.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
         } else {
-          paddle2.dx = 0;
+          paddle1.dx = 0;
         }
-        paddle2.x = clamp(paddle2.x + paddle2.dx, 0, BASE_WIDTH - paddle2.width);
+        paddle1.x = clamp(paddle1.x + paddle1.dx, 0, BASE_WIDTH - paddle1.width);
       } else if (gameMode === 'pvbot') {
-        const centerPaddle = paddle2.x + paddle2.width / 2;
+        // Бот управляет верхней ракеткой
+        const centerPaddle = paddle1.x + paddle1.width / 2;
         if (centerPaddle < ball.x - 10) {
-          paddle2.x = clamp(paddle2.x + PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle2.width);
+          paddle1.x = clamp(paddle1.x + PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle1.width);
         } else if (centerPaddle > ball.x + 10) {
-          paddle2.x = clamp(paddle2.x - PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle2.width);
+          paddle1.x = clamp(paddle1.x - PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle1.width);
         }
       }
     } else {
@@ -418,15 +446,9 @@
 
     ctx.fillStyle = '#fff';
 
-    if (!isMobile()) {
-      // ПК — вертикальные ракетки
-      ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
-      ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
-    } else {
-      // Мобильная — ракетки горизонтальные (двигаются по X)
-      ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
-      ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
-    }
+    // Рисуем ракетки
+    ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+    ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
 
     // Мяч
     ctx.beginPath();
@@ -469,12 +491,12 @@
       let x = touch.clientX - canvasRect.left;
       let y = touch.clientY - canvasRect.top;
 
-      // Верхняя половина экрана — игрок 2
+      // Верхняя половина экрана — игрок 1 (верхняя ракетка)
       if (y < canvasRect.height / 2) {
-        newP2X = x * (BASE_WIDTH / canvasRect.width);
-      } else {
-        // Нижняя половина — игрок 1
         newP1X = x * (BASE_WIDTH / canvasRect.width);
+      } else {
+        // Нижняя половина — игрок 2 (нижняя ракетка)
+        newP2X = x * (BASE_WIDTH / canvasRect.width);
       }
     }
 

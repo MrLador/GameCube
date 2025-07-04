@@ -7,7 +7,7 @@
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
-    background: #222; /* темный фон */
+    background: #222;
     font-family: Arial, sans-serif;
     user-select: none;
     overflow: hidden;
@@ -17,9 +17,10 @@
     justify-content: center;
   }
   #score {
+    color: #eee; /* светлый цвет для ПК */
+    background: transparent;
     font-size: 32px;
     font-weight: bold;
-    color: #222; /* по умолчанию темный текст */
     margin: 10px 0 5px 0;
     user-select: none;
     display: flex;
@@ -28,7 +29,6 @@
     gap: 10px;
     width: 120px;
     z-index: 20;
-    background: transparent;
     padding: 0;
     border-radius: 0;
   }
@@ -56,8 +56,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Добавим белую рамку */
-    border: 3px solid white;
+    border: 3px solid white; /* рамка всегда видна */
     box-sizing: border-box;
   }
   #gameCanvas {
@@ -111,7 +110,7 @@
     user-select: none;
   }
 
-  /* Мобильная версия: вертикальное растяжение и поворот */
+  /* Мобильная версия */
   @media (max-width: 600px) {
     #gameContainer {
       width: 80vw;
@@ -119,7 +118,7 @@
       aspect-ratio: 4 / 6.5;
       margin-top: 10px;
       margin-bottom: 10px;
-      border: 3px solid white; /* рамка видна и в моб версии */
+      /* рамка уже есть, не нужно повторять */
     }
     #gameCanvas {
       transform: rotate(90deg);
@@ -128,7 +127,6 @@
       max-width: none;
       max-height: none;
     }
-    /* В мобильной версии цвет счёта белый, без фона */
     #score {
       color: #fff !important;
       background: transparent !important;
@@ -176,12 +174,14 @@
 
   const BASE_WIDTH = 700;
   const BASE_HEIGHT = 400;
-  const PADDLE_WIDTH = 80;  // в мобильной версии ракетки горизонтальные, ширина больше
-  const PADDLE_HEIGHT = 10;
+  const PADDLE_WIDTH_MOBILE = 80;  // ширина ракеток в моб. версии (горизонтальные)
+  const PADDLE_HEIGHT_MOBILE = 10;
+  const PADDLE_WIDTH_DESKTOP = 10; // ширина ракеток в ПК версии (вертикальные)
+  const PADDLE_HEIGHT_DESKTOP = 80;
   const PADDLE_SPEED = 8;
   const BALL_RADIUS = 8;
   const BALL_SPEED = 5;
-  const BALL_RESET_DELAY = 400; // уменьшенная задержка после очка
+  const BALL_RESET_DELAY = 400;
 
   let paddle1, paddle2, ball;
   let score1 = 0;
@@ -200,38 +200,38 @@
 
   function initObjects() {
     if (isMobile()) {
-      // В мобильной версии ракетки горизонтальные, верхняя сверху, нижняя снизу
+      // Мобильная версия: ракетки горизонтальные
       paddle1 = {
-        x: BASE_WIDTH / 2 - PADDLE_WIDTH / 2,
-        y: 10, // сверху
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
+        x: BASE_WIDTH / 2 - PADDLE_WIDTH_MOBILE / 2,
+        y: 10, // верхняя ракетка сверху
+        width: PADDLE_WIDTH_MOBILE,
+        height: PADDLE_HEIGHT_MOBILE,
         dx: 0,
         dy: 0
       };
       paddle2 = {
-        x: BASE_WIDTH / 2 - PADDLE_WIDTH / 2,
-        y: BASE_HEIGHT - 10 - PADDLE_HEIGHT, // снизу
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
+        x: BASE_WIDTH / 2 - PADDLE_WIDTH_MOBILE / 2,
+        y: BASE_HEIGHT - 10 - PADDLE_HEIGHT_MOBILE, // нижняя ракетка снизу
+        width: PADDLE_WIDTH_MOBILE,
+        height: PADDLE_HEIGHT_MOBILE,
         dx: 0,
         dy: 0
       };
     } else {
-      // ПК версия — вертикальные ракетки слева и справа
+      // ПК версия: ракетки вертикальные
       paddle1 = {
         x: 10,
-        y: BASE_HEIGHT / 2 - 40,
-        width: 10,
-        height: 80,
+        y: BASE_HEIGHT / 2 - PADDLE_HEIGHT_DESKTOP / 2,
+        width: PADDLE_WIDTH_DESKTOP,
+        height: PADDLE_HEIGHT_DESKTOP,
         dx: 0,
         dy: 0
       };
       paddle2 = {
-        x: BASE_WIDTH - 20,
-        y: BASE_HEIGHT / 2 - 40,
-        width: 10,
-        height: 80,
+        x: BASE_WIDTH - 10 - PADDLE_WIDTH_DESKTOP,
+        y: BASE_HEIGHT / 2 - PADDLE_HEIGHT_DESKTOP / 2,
+        width: PADDLE_WIDTH_DESKTOP,
+        height: PADDLE_HEIGHT_DESKTOP,
         dx: 0,
         dy: 0
       };
@@ -274,33 +274,33 @@
 
     if (isMobile()) {
       // Мобильная версия: ракетки двигаются по X (горизонтально)
-      // Нижняя ракетка (paddle2) управляется касаниями в нижней половине экрана
-      if (touchPositions.p2X !== null) {
-        let center = paddle2.x + paddle2.width / 2;
-        let diff = touchPositions.p2X - center;
-        paddle2.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
-      } else {
-        paddle2.dx = 0;
-      }
-      paddle2.x = clamp(paddle2.x + paddle2.dx, 0, BASE_WIDTH - paddle2.width);
-
       // Верхняя ракетка (paddle1) управляется касаниями в верхней половине экрана
+      if (touchPositions.p1X !== null) {
+        let center = paddle1.x + paddle1.width / 2;
+        let diff = touchPositions.p1X - center;
+        paddle1.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
+      } else {
+        paddle1.dx = 0;
+      }
+      paddle1.x = clamp(paddle1.x + paddle1.dx, 0, BASE_WIDTH - paddle1.width);
+
+      // Нижняя ракетка (paddle2) управляется касаниями в нижней половине экрана
       if (gameMode === 'pvp') {
-        if (touchPositions.p1X !== null) {
-          let center = paddle1.x + paddle1.width / 2;
-          let diff = touchPositions.p1X - center;
-          paddle1.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
+        if (touchPositions.p2X !== null) {
+          let center = paddle2.x + paddle2.width / 2;
+          let diff = touchPositions.p2X - center;
+          paddle2.dx = Math.sign(diff) * Math.min(Math.abs(diff) * 0.3, PADDLE_SPEED);
         } else {
-          paddle1.dx = 0;
+          paddle2.dx = 0;
         }
-        paddle1.x = clamp(paddle1.x + paddle1.dx, 0, BASE_WIDTH - paddle1.width);
+        paddle2.x = clamp(paddle2.x + paddle2.dx, 0, BASE_WIDTH - paddle2.width);
       } else if (gameMode === 'pvbot') {
-        // Бот управляет верхней ракеткой
-        const centerPaddle = paddle1.x + paddle1.width / 2;
+        // Бот управляет нижней ракеткой
+        const centerPaddle = paddle2.x + paddle2.width / 2;
         if (centerPaddle < ball.x - 10) {
-          paddle1.x = clamp(paddle1.x + PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle1.width);
+          paddle2.x = clamp(paddle2.x + PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle2.width);
         } else if (centerPaddle > ball.x + 10) {
-          paddle1.x = clamp(paddle1.x - PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle1.width);
+          paddle2.x = clamp(paddle2.x - PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle2.width);
         }
       }
     } else {
@@ -325,7 +325,7 @@
     ball.x += ball.speedX;
     ball.y += ball.speedY;
 
-    // Проверка голов (сначала!)
+    // Проверка голов
     if (!isMobile()) {
       // ПК: голы по выходу мяча за левую или правую границу
       if (ball.x < 0) {
@@ -354,7 +354,7 @@
       }
     }
 
-    // Столкновения с границами (верх-низ для ПК, левый-правый для моб)
+    // Столкновения с границами
     if (!isMobile()) {
       if (ball.y - ball.radius < 0) {
         ball.y = ball.radius;
@@ -399,7 +399,7 @@
         ball.speedY = deltaY * 0.3;
       }
     } else {
-      // Мобильная версия — ракетки горизонтальные, двигаются по X, мяч двигается по Y
+      // Мобильная версия — ракетки горизонтальные
       if (
         ball.y + ball.radius > paddle1.y &&
         ball.y - ball.radius < paddle1.y + paddle1.height &&

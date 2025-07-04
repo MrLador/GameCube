@@ -5,41 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ping Pong</title>
 <style>
-  body, html {
+  html, body {
     margin: 0; padding: 0; height: 100%;
-    display: flex; justify-content: center; align-items: center;
     background: #f0f0f0;
-    font-family: Arial, sans-serif;
+    display: flex; justify-content: center; align-items: center;
     user-select: none;
   }
   #gameCanvas {
     background: #222;
     display: block;
     border-radius: 8px;
-  }
-  #score {
-    position: absolute;
-    top: 20px;
-    font-size: 24px;
-    color: #222;
-    font-weight: bold;
-    user-select: none;
+    max-width: 95vw;
+    max-height: 90vh;
+    width: 100%;
+    height: auto;
   }
 </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="700" height="400"></canvas>
-<div id="score" style="position: fixed; top: 10px; width: 100%; text-align: center;">0 : 0</div>
+<canvas id="gameCanvas"></canvas>
 
 <script>
 (() => {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const scoreDiv = document.getElementById('score');
 
-  const WIDTH = canvas.width;
-  const HEIGHT = canvas.height;
+  // Базовые размеры для расчёта пропорций
+  const BASE_WIDTH = 700;
+  const BASE_HEIGHT = 400;
 
   // Параметры ракеток
   const PADDLE_WIDTH = 10;
@@ -51,44 +45,65 @@
   const BALL_SPEED = 5;
 
   // Игроки
-  const paddle1 = {
-    x: 10,
-    y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
-    width: PADDLE_WIDTH,
-    height: PADDLE_HEIGHT,
-    dy: 0
-  };
-
-  const paddle2 = {
-    x: WIDTH - 10 - PADDLE_WIDTH,
-    y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
-    width: PADDLE_WIDTH,
-    height: PADDLE_HEIGHT,
-    dy: 0
-  };
-
-  // Мяч
-  const ball = {
-    x: WIDTH / 2,
-    y: HEIGHT / 2,
-    radius: BALL_RADIUS,
-    speedX: BALL_SPEED * (Math.random() < 0.5 ? 1 : -1),
-    speedY: BALL_SPEED * (Math.random() * 2 - 1)
-  };
-
-  // Счет
+  let paddle1, paddle2, ball;
   let score1 = 0;
   let score2 = 0;
 
   // Управление
   const keys = {};
 
-  window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
-  });
-  window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false;
-  });
+  // Масштаб и размеры
+  let scale = 1;
+  let WIDTH, HEIGHT;
+
+  function setupSizes() {
+    // Рассчитываем масштаб по ширине и высоте окна
+    const maxWidth = window.innerWidth * 0.95;
+    const maxHeight = window.innerHeight * 0.9;
+
+    const scaleX = maxWidth / BASE_WIDTH;
+    const scaleY = maxHeight / BASE_HEIGHT;
+
+    scale = Math.min(scaleX, scaleY);
+
+    WIDTH = BASE_WIDTH * scale;
+    HEIGHT = BASE_HEIGHT * scale;
+
+    canvas.width = BASE_WIDTH;
+    canvas.height = BASE_HEIGHT;
+
+    canvas.style.width = WIDTH + 'px';
+    canvas.style.height = HEIGHT + 'px';
+  }
+
+  function initObjects() {
+    paddle1 = {
+      x: 10,
+      y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
+      width: PADDLE_WIDTH,
+      height: PADDLE_HEIGHT,
+      dy: 0
+    };
+
+    paddle2 = {
+      x: BASE_WIDTH - 10 - PADDLE_WIDTH,
+      y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
+      width: PADDLE_WIDTH,
+      height: PADDLE_HEIGHT,
+      dy: 0
+    };
+
+    ball = {
+      x: BASE_WIDTH / 2,
+      y: BASE_HEIGHT / 2,
+      radius: BALL_RADIUS,
+      speedX: BALL_SPEED * (Math.random() < 0.5 ? 1 : -1),
+      speedY: BALL_SPEED * (Math.random() * 2 - 1)
+    };
+
+    score1 = 0;
+    score2 = 0;
+  }
 
   function update() {
     // Движение ракеток
@@ -112,15 +127,15 @@
     paddle2.y += paddle2.dy;
 
     // Ограничение ракеток по полю
-    paddle1.y = Math.max(0, Math.min(HEIGHT - paddle1.height, paddle1.y));
-    paddle2.y = Math.max(0, Math.min(HEIGHT - paddle2.height, paddle2.y));
+    paddle1.y = Math.max(0, Math.min(BASE_HEIGHT - paddle1.height, paddle1.y));
+    paddle2.y = Math.max(0, Math.min(BASE_HEIGHT - paddle2.height, paddle2.y));
 
     // Движение мяча
     ball.x += ball.speedX;
     ball.y += ball.speedY;
 
     // Столкновение с верхом и низом
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > HEIGHT) {
+    if (ball.y - ball.radius < 0 || ball.y + ball.radius > BASE_HEIGHT) {
       ball.speedY = -ball.speedY;
     }
 
@@ -131,10 +146,9 @@
       ball.y < paddle1.y + paddle1.height
     ) {
       ball.speedX = -ball.speedX;
-      // Добавим немного вариации по Y
       let deltaY = ball.y - (paddle1.y + paddle1.height / 2);
       ball.speedY = deltaY * 0.3;
-      ball.x = paddle1.x + paddle1.width + ball.radius; // чтобы не застрял
+      ball.x = paddle1.x + paddle1.width + ball.radius;
     }
 
     if (
@@ -152,35 +166,34 @@
     if (ball.x < 0) {
       score2++;
       resetBall();
-    } else if (ball.x > WIDTH) {
+    } else if (ball.x > BASE_WIDTH) {
       score1++;
       resetBall();
     }
-
-    scoreDiv.textContent = `${score1} : ${score2}`;
   }
 
   function resetBall() {
-    ball.x = WIDTH / 2;
-    ball.y = HEIGHT / 2;
+    ball.x = BASE_WIDTH / 2;
+    ball.y = BASE_HEIGHT / 2;
     ball.speedX = BALL_SPEED * (Math.random() < 0.5 ? 1 : -1);
     ball.speedY = BALL_SPEED * (Math.random() * 2 - 1);
   }
 
   function draw() {
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    // Очистка
+    ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
     // Поле
     ctx.fillStyle = '#222';
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
     // Центр линия
     ctx.strokeStyle = '#555';
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
-    ctx.moveTo(WIDTH / 2, 0);
-    ctx.lineTo(WIDTH / 2, HEIGHT);
+    ctx.moveTo(BASE_WIDTH / 2, 0);
+    ctx.lineTo(BASE_WIDTH / 2, BASE_HEIGHT);
     ctx.stroke();
     ctx.setLineDash([]);
 
@@ -194,6 +207,12 @@
     ctx.fillStyle = '#fff';
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
+
+    // Счёт сверху по центру
+    ctx.fillStyle = '#fff';
+    ctx.font = '28px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${score1} : ${score2}`, BASE_WIDTH / 2, 30);
   }
 
   function loop() {
@@ -202,6 +221,22 @@
     requestAnimationFrame(loop);
   }
 
+  // Обработчики клавиатуры
+  window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  // При изменении размера окна пересчитываем размеры
+  window.addEventListener('resize', () => {
+    setupSizes();
+  });
+
+  // Инициализация
+  setupSizes();
+  initObjects();
   loop();
 })();
 </script>

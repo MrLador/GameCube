@@ -2,540 +2,309 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Awesome Motorcycle Ping Pong</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Monument Valley Style Puzzle</title>
 <style>
-  /* Reset */
-  * {
-    box-sizing: border-box;
-  }
+  /* Сброс и базовые стили */
   body, html {
     margin: 0; padding: 0; height: 100%;
-    background: #121212;
-    color: #eee;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #e0f2f1, #b2dfdb);
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     user-select: none;
-  }
-  h1 {
-    margin-bottom: 0.2em;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-  #modeSelect {
-    margin-bottom: 1em;
-  }
-  button {
-    background: none;
-    border: 2px solid #eee;
-    color: #eee;
-    padding: 0.5em 1.5em;
-    margin: 0 0.5em;
-    font-weight: 600;
-    font-size: 1.1em;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  button:hover, button:focus {
-    background-color: #eee;
-    color: #121212;
-    outline: none;
-  }
-  #gameContainer {
-    position: relative;
-    width: 90vw;
-    max-width: 900px;
-    aspect-ratio: 16 / 9;
-    background: #1e1e1e;
-    border: 3px solid #eee;
-    border-radius: 12px;
     overflow: hidden;
-    touch-action: none;
   }
-  canvas {
-    display: block;
+
+  #game-container {
+    width: 90vmin;
+    height: 90vmin;
+    max-width: 600px;
+    max-height: 600px;
+    background: #ffffffcc;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    position: relative;
+  }
+
+  svg {
     width: 100%;
     height: 100%;
-  }
-  #scoreboard {
-    margin-top: 0.8em;
-    font-size: 1.3em;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    display: flex;
-    justify-content: space-around;
-    width: 90vw;
-    max-width: 900px;
-  }
-  #timer {
-    font-size: 1.2em;
-    font-weight: 600;
-    margin-top: 0.5em;
-  }
-  #message {
-    margin-top: 1em;
-    font-size: 1.4em;
-    font-weight: 700;
-    color: #f0a500;
+    display: block;
   }
 
-  /* Line art style for paddles and ball */
-  .line-art {
-    stroke: #eee;
+  /* Плавные переходы для трансформаций */
+  .tile, .player, .goal {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Плитки */
+  .tile {
+    cursor: pointer;
+    stroke: #607d8b;
+    stroke-width: 1.5;
+  }
+
+  /* Персонаж */
+  .player {
+    fill: #ff8a65;
+    filter: drop-shadow(0 0 2px #ff7043);
+  }
+
+  /* Цель */
+  .goal {
+    fill: url(#goalGradient);
+    stroke: #4db6ac;
+    stroke-width: 2;
+  }
+
+  /* Подсветка активной плитки */
+  .tile.active {
+    stroke: #ff7043;
     stroke-width: 3;
-    fill: none;
   }
 
-  /* Controls hint for mobile */
-  #mobileControlsHint {
-    margin-top: 0.8em;
-    font-size: 0.9em;
-    color: #bbb;
+  /* Инструкция */
+  #instructions {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.85rem;
+    color: #455a64;
     user-select: none;
   }
 </style>
 </head>
 <body>
+<div id="game-container" tabindex="0" aria-label="Puzzle game in Monument Valley style">
+  <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+    <defs>
+      <!-- Градиенты для плиток -->
+      <linearGradient id="tileGradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#a7c7e7" />
+        <stop offset="100%" stop-color="#d0e6f7" />
+      </linearGradient>
+      <linearGradient id="goalGradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#80cbc4" />
+        <stop offset="100%" stop-color="#4db6ac" />
+      </linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.15"/>
+      </filter>
+    </defs>
 
-<h1>Awesome Motorcycle Ping Pong</h1>
+    <!-- Группа уровня, которую будем поворачивать -->
+    <g id="level-group" transform="translate(300,300)">
+      <!-- Плитки будут добавлены динамически -->
+    </g>
 
-<div id="modeSelect">
-  <button id="btnPvBot">Игрок vs Бот</button>
-  <button id="btnPvP">Два игрока</button>
+    <!-- Персонаж -->
+    <circle id="player" class="player" r="15" cx="0" cy="0" filter="url(#shadow)" />
+
+    <!-- Цель -->
+    <rect id="goal" class="goal" width="40" height="40" rx="6" ry="6" filter="url(#shadow)" />
+  </svg>
+
+  <div id="instructions">
+    Используйте стрелки для перемещения, пробел — поворот уровня
+  </div>
 </div>
-
-<div id="gameContainer" aria-label="Игровое поле">
-  <canvas id="gameCanvas" width="800" height="450" aria-live="polite"></canvas>
-</div>
-
-<div id="scoreboard" aria-label="Табло счета">
-  <div>Игрок 1: <span id="score1">0</span></div>
-  <div>Игрок 2: <span id="score2">0</span></div>
-</div>
-
-<div id="timer" aria-label="Таймер">Время: 02:00</div>
-<div id="message" role="alert" aria-live="assertive"></div>
-<div id="mobileControlsHint"></div>
 
 <script>
-(() => {
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  /*
+   * Игра в стиле Monument Valley с изометрической проекцией
+   * Автор: Heck.ai
+   */
 
-  const score1El = document.getElementById('score1');
-  const score2El = document.getElementById('score2');
-  const timerEl = document.getElementById('timer');
-  const messageEl = document.getElementById('message');
-  const mobileHintEl = document.getElementById('mobileControlsHint');
+  (function() {
+    const svgNS = "http://www.w3.org/2000/svg";
 
-  const btnPvBot = document.getElementById('btnPvBot');
-  const btnPvP = document.getElementById('btnPvP');
-  const modeSelectDiv = document.getElementById('modeSelect');
+    // Параметры изометрии
+    // Изометрическая проекция: x' = (x - y) * cos(30°), y' = (x + y) * sin(30°)
+    const isoAngle = Math.PI / 6; // 30 градусов
+    const tileSize = 60; // размер плитки в "логических" единицах
 
-  // Game constants
-  const PADDLE_WIDTH_RATIO = 0.02; // relative to canvas width
-  const PADDLE_HEIGHT_RATIO = 0.18; // relative to canvas height
-  const BALL_RADIUS_RATIO = 0.015; // relative to canvas width
-  const PADDLE_SPEED = 7; // pixels per frame approx
-  const BALL_SPEED_BASE = 6; // base speed of ball
-  const GAME_DURATION = 120; // seconds
+    // Игровое поле (логическая сетка)
+    // 0 - пусто, 1 - плитка
+    // Пример уровня 5x5 с "островками"
+    const levelMap = [
+      [0, 0, 1, 0, 0],
+      [0, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 0],
+      [0, 0, 1, 0, 0],
+    ];
 
-  // Colors inspired by motorcycle line art style
-  const COLOR_BG = '#1e1e1e';
-  const COLOR_LINE = '#eee';
-  const COLOR_ACCENT = '#f0a500'; // warm yellow-orange accent
+    const rows = levelMap.length;
+    const cols = levelMap[0].length;
 
-  // Game state
-  let mode = null; // 'bot' or 'pvp'
-  let scores = [0, 0];
-  let timer = GAME_DURATION;
-  let gameRunning = false;
+    // Игрок и цель в логических координатах
+    let playerPos = {x: 2, y: 4}; // старт внизу по центру
+    const goalPos = {x: 2, y: 0}; // цель сверху по центру
 
-  // Paddle positions (y coordinate of top)
-  let paddle1Y, paddle2Y;
-  let paddleWidth, paddleHeight, ballRadius;
+    // Текущий угол поворота уровня (0, 90, 180, 270)
+    let rotation = 0;
 
-  // Ball state
-  let ballX, ballY;
-  let ballSpeedX, ballSpeedY;
+    // Ссылки на SVG элементы
+    const levelGroup = document.getElementById('level-group');
+    const playerElem = document.getElementById('player');
+    const goalElem = document.getElementById('goal');
+    const container = document.getElementById('game-container');
 
-  // Input state
-  let keysPressed = {};
-  let isMobile = false;
-
-  // For mobile touch control
-  let touchZones = [];
-
-  // Initialize sizes based on canvas size
-  function initSizes() {
-    paddleWidth = canvas.width * PADDLE_WIDTH_RATIO;
-    paddleHeight = canvas.height * PADDLE_HEIGHT_RATIO;
-    ballRadius = canvas.width * BALL_RADIUS_RATIO;
-  }
-
-  // Reset game state for new round
-  function resetGame() {
-    scores = [0, 0];
-    timer = GAME_DURATION;
-    paddle1Y = (canvas.height - paddleHeight) / 2;
-    paddle2Y = (canvas.height - paddleHeight) / 2;
-    resetBall();
-    updateScoreboard();
-    updateTimerDisplay();
-    messageEl.textContent = '';
-  }
-
-  // Reset ball to center and random direction
-  function resetBall() {
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    // Randomize initial direction, ballSpeedX positive means to right
-    let angle = (Math.random() * Math.PI / 4) - Math.PI / 8; // -22.5 to +22.5 degrees
-    let direction = Math.random() < 0.5 ? 1 : -1;
-    ballSpeedX = direction * BALL_SPEED_BASE * Math.cos(angle);
-    ballSpeedY = BALL_SPEED_BASE * Math.sin(angle);
-  }
-
-  // Update scoreboard UI
-  function updateScoreboard() {
-    score1El.textContent = scores[0];
-    score2El.textContent = scores[1];
-  }
-
-  // Update timer UI
-  function updateTimerDisplay() {
-    let minutes = Math.floor(timer / 60);
-    let seconds = timer % 60;
-    timerEl.textContent = `Время: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-  }
-
-  // Draw line art style paddles and ball
-  function drawPaddle(x, y) {
-    ctx.strokeStyle = COLOR_LINE;
-    ctx.lineWidth = 3;
-    ctx.fillStyle = 'transparent';
-    ctx.beginPath();
-    // Rounded rectangle paddle with line art style
-    const radius = paddleWidth / 2;
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + paddleWidth - radius, y);
-    ctx.quadraticCurveTo(x + paddleWidth, y, x + paddleWidth, y + radius);
-    ctx.lineTo(x + paddleWidth, y + paddleHeight - radius);
-    ctx.quadraticCurveTo(x + paddleWidth, y + paddleHeight, x + paddleWidth - radius, y + paddleHeight);
-    ctx.lineTo(x + radius, y + paddleHeight);
-    ctx.quadraticCurveTo(x, y + paddleHeight, x, y + paddleHeight - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.stroke();
-  }
-
-  function drawBall(x, y) {
-    ctx.strokeStyle = COLOR_LINE;
-    ctx.lineWidth = 3;
-    ctx.fillStyle = 'transparent';
-    ctx.beginPath();
-    ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  // Draw center dashed line
-  function drawCenterLine() {
-    ctx.strokeStyle = COLOR_LINE;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([15, 15]);
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Draw the entire frame
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = COLOR_BG;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    drawCenterLine();
-    drawPaddle(10, paddle1Y);
-    drawPaddle(canvas.width - 10 - paddleWidth, paddle2Y);
-    drawBall(ballX, ballY);
-  }
-
-  // Game loop variables
-  let lastTime = 0;
-  let accumulator = 0;
-
-  // Game loop
-  function gameLoop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    const delta = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-
-    if (gameRunning) {
-      update(delta);
-      draw();
-    }
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  // Update game state
-  function update(delta) {
-    // Update timer
-    accumulator += delta;
-    if (accumulator >= 1) {
-      timer--;
-      updateTimerDisplay();
-      accumulator = 0;
-      if (timer <= 0) {
-        endGame();
-        return;
+    // Преобразование логических координат в изометрические SVG координаты
+    function isoProject(x, y) {
+      // Сначала применим поворот уровня к координатам
+      let rx, ry;
+      switch(rotation) {
+        case 0: rx = x; ry = y; break;
+        case 90: rx = y; ry = cols - 1 - x; break;
+        case 180: rx = cols - 1 - x; ry = rows - 1 - y; break;
+        case 270: rx = rows - 1 - y; ry = x; break;
       }
+      // Изометрическая проекция
+      const isoX = (rx - ry) * Math.cos(isoAngle) * tileSize;
+      const isoY = (rx + ry) * Math.sin(isoAngle) * tileSize;
+      return {x: isoX, y: isoY};
     }
 
-    // Move paddles based on input
-    handlePaddleMovement();
+    // Создаем плитку SVG элемента
+    function createTile(x, y) {
+      // Изометрический шестиугольник (параллелограмм)
+      // Для простоты — ромб из 4 точек
+      const points = [
+        {x: 0, y: -tileSize / 2},
+        {x: tileSize * Math.cos(isoAngle), y: 0},
+        {x: 0, y: tileSize / 2},
+        {x: -tileSize * Math.cos(isoAngle), y: 0},
+      ];
 
-    // Move ball
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
+      const polygon = document.createElementNS(svgNS, 'polygon');
+      polygon.setAttribute('class', 'tile');
+      polygon.setAttribute('fill', 'url(#tileGradient)');
+      polygon.setAttribute('points', points.map(p => `${p.x},${p.y}`).join(' '));
+      polygon.setAttribute('data-x', x);
+      polygon.setAttribute('data-y', y);
 
-    // Ball collision with top/bottom
-    if (ballY - ballRadius <= 0) {
-      ballY = ballRadius;
-      ballSpeedY = -ballSpeedY;
-    }
-    if (ballY + ballRadius >= canvas.height) {
-      ballY = canvas.height - ballRadius;
-      ballSpeedY = -ballSpeedY;
-    }
+      // Позиционируем плитку
+      const pos = isoProject(x, y);
+      polygon.setAttribute('transform', `translate(${pos.x},${pos.y})`);
 
-    // Ball collision with paddles
-    // Left paddle
-    if (ballX - ballRadius <= 10 + paddleWidth) {
-      if (ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
-        ballX = 10 + paddleWidth + ballRadius;
-        ballSpeedX = -ballSpeedX * 1.05; // speed up a bit
-        // Add spin based on where it hit the paddle
-        let hitPos = (ballY - paddle1Y) / paddleHeight - 0.5;
-        ballSpeedY += hitPos * 5;
-      } else if (ballX - ballRadius < 0) {
-        // Score for player 2
-        scores[1]++;
-        updateScoreboard();
-        resetBall();
-      }
-    }
-    // Right paddle
-    if (ballX + ballRadius >= canvas.width - 10 - paddleWidth) {
-      if (ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
-        ballX = canvas.width - 10 - paddleWidth - ballRadius;
-        ballSpeedX = -ballSpeedX * 1.05;
-        let hitPos = (ballY - paddle2Y) / paddleHeight - 0.5;
-        ballSpeedY += hitPos * 5;
-      } else if (ballX + ballRadius > canvas.width) {
-        // Score for player 1
-        scores[0]++;
-        updateScoreboard();
-        resetBall();
-      }
+      return polygon;
     }
 
-    // Clamp ball speed to avoid it going too fast
-    const maxSpeed = 15;
-    ballSpeedX = Math.max(Math.min(ballSpeedX, maxSpeed), -maxSpeed);
-    ballSpeedY = Math.max(Math.min(ballSpeedY, maxSpeed), -maxSpeed);
-
-    // Bot AI if mode is bot
-    if (mode === 'bot') {
-      botMove(delta);
-    }
-  }
-
-  // Handle paddle movement based on input
-  function handlePaddleMovement() {
-    // Player 1 controls: W/S or touch left side
-    if (keysPressed['KeyW'] || keysPressed['ArrowUp']) {
-      paddle1Y -= PADDLE_SPEED;
-    }
-    if (keysPressed['KeyS'] || keysPressed['ArrowDown']) {
-      paddle1Y += PADDLE_SPEED;
-    }
-    // Player 2 controls: Up/Down arrows or touch right side (in PvP)
-    if (mode === 'pvp') {
-      if (keysPressed['ArrowUp']) {
-        paddle2Y -= PADDLE_SPEED;
-      }
-      if (keysPressed['ArrowDown']) {
-        paddle2Y += PADDLE_SPEED;
-      }
-    }
-
-    // Clamp paddles inside canvas
-    paddle1Y = Math.min(Math.max(paddle1Y, 0), canvas.height - paddleHeight);
-    paddle2Y = Math.min(Math.max(paddle2Y, 0), canvas.height - paddleHeight);
-  }
-
-  // Simple bot AI: follow the ball with some delay
-  function botMove(delta) {
-    const centerPaddle = paddle2Y + paddleHeight / 2;
-    const diff = ballY - centerPaddle;
-    const botSpeed = PADDLE_SPEED * 0.9;
-    if (Math.abs(diff) > 10) {
-      if (diff > 0) {
-        paddle2Y += botSpeed;
-      } else {
-        paddle2Y -= botSpeed;
-      }
-    }
-    paddle2Y = Math.min(Math.max(paddle2Y, 0), canvas.height - paddleHeight);
-  }
-
-  // End game and show winner
-  function endGame() {
-    gameRunning = false;
-    let winnerText = '';
-    if (scores[0] > scores[1]) {
-      winnerText = 'Игрок 1 выиграл!';
-    } else if (scores[1] > scores[0]) {
-      winnerText = mode === 'bot' ? 'Бот выиграл!' : 'Игрок 2 выиграл!';
-    } else {
-      winnerText = 'Ничья!';
-    }
-    messageEl.textContent = winnerText + ' Выберите режим для новой игры.';
-    modeSelectDiv.style.display = 'flex';
-  }
-
-  // Start game with selected mode
-  function startGame(selectedMode) {
-    mode = selectedMode;
-    resetGame();
-    gameRunning = true;
-    modeSelectDiv.style.display = 'none';
-    messageEl.textContent = '';
-    lastTime = 0;
-  }
-
-  // Detect if device is mobile
-  function detectMobile() {
-    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-
-  // Setup keyboard controls
-  function setupKeyboard() {
-    window.addEventListener('keydown', e => {
-      keysPressed[e.code] = true;
-    });
-    window.addEventListener('keyup', e => {
-      keysPressed[e.code] = false;
-    });
-  }
-
-  // Setup touch controls for mobile
-  function setupTouchControls() {
-    // Define two vertical zones: left half for player 1, right half for player 2 (if PvP)
-    // Touch upper half of zone - move paddle up, lower half - move paddle down
-    const container = document.getElementById('gameContainer');
-
-    container.addEventListener('touchstart', handleTouch);
-    container.addEventListener('touchmove', handleTouch);
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchcancel', handleTouchEnd);
-
-    // Track active touches for paddles
-    let activeTouches = {};
-
-    function handleTouch(e) {
-      e.preventDefault();
-      for (let touch of e.touches) {
-        const x = touch.clientX - container.getBoundingClientRect().left;
-        const y = touch.clientY - container.getBoundingClientRect().top;
-        const zone = x < container.clientWidth / 2 ? 'left' : 'right';
-
-        if (mode === 'bot') {
-          // Only left side controls player 1 paddle
-          if (zone === 'left') {
-            if (y < container.clientHeight / 2) {
-              keysPressed['KeyW'] = true;
-              keysPressed['KeyS'] = false;
-            } else {
-              keysPressed['KeyS'] = true;
-              keysPressed['KeyW'] = false;
-            }
-          }
-        } else if (mode === 'pvp') {
-          // Left side controls player 1, right side controls player 2
-          if (zone === 'left') {
-            if (y < container.clientHeight / 2) {
-              keysPressed['KeyW'] = true;
-              keysPressed['KeyS'] = false;
-            } else {
-              keysPressed['KeyS'] = true;
-              keysPressed['KeyW'] = false;
-            }
-          } else {
-            if (y < container.clientHeight / 2) {
-              keysPressed['ArrowUp'] = true;
-              keysPressed['ArrowDown'] = false;
-            } else {
-              keysPressed['ArrowDown'] = true;
-              keysPressed['ArrowUp'] = false;
-            }
+    // Отрисовка уровня
+    function drawLevel() {
+      levelGroup.innerHTML = '';
+      for(let y=0; y<rows; y++) {
+        for(let x=0; x<cols; x++) {
+          if(levelMap[y][x] === 1) {
+            const tile = createTile(x, y);
+            levelGroup.appendChild(tile);
           }
         }
       }
     }
-    function handleTouchEnd(e) {
-      e.preventDefault();
-      // Stop all paddle movement on touch end
-      keysPressed['KeyW'] = false;
-      keysPressed['KeyS'] = false;
-      keysPressed['ArrowUp'] = false;
-      keysPressed['ArrowDown'] = false;
-    }
-  }
 
-  // Resize canvas to fit container and keep aspect ratio
-  function resizeCanvas() {
-    const container = document.getElementById('gameContainer');
-    const rect = container.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    initSizes();
-  }
-
-  // Initialize everything
-  function init() {
-    isMobile = detectMobile();
-    resizeCanvas();
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-    });
-
-    setupKeyboard();
-
-    if (isMobile) {
-      setupTouchControls();
-      mobileHintEl.textContent = 'Управление: тапайте по левой/правой стороне экрана сверху или снизу для управления ракетками.';
-    } else {
-      mobileHintEl.textContent = 'Управление: Игрок 1 — W/S, Игрок 2 — стрелки вверх/вниз.';
+    // Обновление позиции игрока
+    function updatePlayer() {
+      const pos = isoProject(playerPos.x, playerPos.y);
+      playerElem.setAttribute('cx', pos.x);
+      playerElem.setAttribute('cy', pos.y);
     }
 
-    btnPvBot.addEventListener('click', () => startGame('bot'));
-    btnPvP.addEventListener('click', () => startGame('pvp'));
+    // Обновление позиции цели
+    function updateGoal() {
+      const pos = isoProject(goalPos.x, goalPos.y);
+      goalElem.setAttribute('x', pos.x - 20);
+      goalElem.setAttribute('y', pos.y - 20);
+    }
 
-    draw(); // initial draw
-    requestAnimationFrame(gameLoop);
-  }
+    // Проверка, есть ли плитка в координатах
+    function isTile(x, y) {
+      if(x < 0 || y < 0 || y >= rows || x >= cols) return false;
+      return levelMap[y][x] === 1;
+    }
 
-  init();
-})();
+    // Проверка победы
+    function checkWin() {
+      if(playerPos.x === goalPos.x && playerPos.y === goalPos.y) {
+        setTimeout(() => alert('Поздравляем! Вы достигли цели!'), 100);
+      }
+    }
+
+    // Перемещение игрока, если возможно
+    function movePlayer(dx, dy) {
+      const nx = playerPos.x + dx;
+      const ny = playerPos.y + dy;
+      if(isTile(nx, ny)) {
+        playerPos.x = nx;
+        playerPos.y = ny;
+        updatePlayer();
+        checkWin();
+      }
+    }
+
+    // Поворот уровня на 90 градусов по часовой стрелке
+    function rotateLevel() {
+      rotation = (rotation + 90) % 360;
+      // Плавно поворачиваем группу уровня
+      levelGroup.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      levelGroup.setAttribute('transform', `translate(300,300) rotate(${rotation})`);
+
+      // После анимации обновим позицию игрока и цели (т.к. координаты логические не меняются, но визуально меняется)
+      setTimeout(() => {
+        updatePlayer();
+        updateGoal();
+      }, 500);
+    }
+
+    // Обработка нажатий клавиш
+    function onKeyDown(e) {
+      switch(e.key) {
+        case 'ArrowUp':
+          movePlayer(0, -1);
+          e.preventDefault();
+          break;
+        case 'ArrowDown':
+          movePlayer(0, 1);
+          e.preventDefault();
+          break;
+        case 'ArrowLeft':
+          movePlayer(-1, 0);
+          e.preventDefault();
+          break;
+        case 'ArrowRight':
+          movePlayer(1, 0);
+          e.preventDefault();
+          break;
+        case ' ':
+          rotateLevel();
+          e.preventDefault();
+          break;
+      }
+    }
+
+    // Инициализация игры
+    function init() {
+      drawLevel();
+      updatePlayer();
+      updateGoal();
+
+      // Начальный поворот
+      levelGroup.setAttribute('transform', `translate(300,300) rotate(${rotation})`);
+
+      // Фокус для клавиатуры
+      container.focus();
+
+      container.addEventListener('keydown', onKeyDown);
+    }
+
+    // Запускаем игру
+    init();
+
+  })();
 </script>
-
 </body>
 </html>

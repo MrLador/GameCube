@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Пинпонг — Современный дизайн с выбором режима</title>
+  <title>Пинпонг — Современный дизайн с эффектами</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
   <style>
     * {
@@ -69,29 +69,6 @@
       font-size: 1.8rem;
       line-height: 1;
     }
-    /* Кнопка рестарта */
-    #restart-btn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #00bfff;
-      border: none;
-      padding: 10px 20px;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #121212;
-      border-radius: 12px;
-      box-shadow: 0 0 12px #00bfffaa;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      user-select: none;
-      display: none;
-      z-index: 10;
-    }
-    #restart-btn:hover {
-      background: #0099cc;
-      box-shadow: 0 0 20px #0099cccc;
-    }
     canvas {
       background: linear-gradient(135deg, #222, #111);
       border-radius: 12px;
@@ -154,8 +131,6 @@
     </button>
   </div>
 
-  <button id="restart-btn" aria-label="Перезапустить игру">↻ Перезапуск</button>
-
   <canvas id="game" width="640" height="400" aria-label="Игровое поле Пинпонг" role="img"></canvas>
 
   <div class="scoreboard" aria-live="polite" aria-atomic="true">
@@ -176,10 +151,7 @@
       const ctx = canvas.getContext('2d');
       const leftScoreEl = document.getElementById('left-score');
       const rightScoreEl = document.getElementById('right-score');
-      const scoreboard = document.querySelector('.scoreboard');
-      const instructions = document.querySelector('.instructions');
       const modeButtons = document.querySelectorAll('.mode-btn');
-      const restartBtn = document.getElementById('restart-btn');
 
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
@@ -199,12 +171,14 @@
         x: 20,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         dy: 0,
+        flashFrames: 0,
       };
 
       const rightPaddle = {
         x: WIDTH - PADDLE_WIDTH - 20,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         dy: 0,
+        flashFrames: 0,
       };
 
       const ball = {
@@ -219,6 +193,13 @@
 
       const keys = {};
 
+      // Эффекты вспышки для краёв
+      const edgeFlash = {
+        top: 0,
+        bottom: 0,
+        maxFrames: 6,
+      };
+
       function resetBall() {
         ball.x = WIDTH / 2 - BALL_SIZE / 2;
         ball.y = HEIGHT / 2 - BALL_SIZE / 2;
@@ -226,10 +207,17 @@
         ball.dy = BALL_SPEED * (Math.random() * 2 - 1);
       }
 
-      function drawRect(x, y, w, h, color) {
-        ctx.fillStyle = color;
-        ctx.shadowColor = 'rgba(0,191,255,0.7)';
-        ctx.shadowBlur = 8;
+      function drawRect(x, y, w, h, color, flashFrames = 0) {
+        if (flashFrames > 0) {
+          const alpha = flashFrames / 6;
+          ctx.fillStyle = `rgba(0,191,255,${alpha})`;
+          ctx.shadowColor = `rgba(0,191,255,${alpha})`;
+          ctx.shadowBlur = 15 * alpha;
+        } else {
+          ctx.fillStyle = color;
+          ctx.shadowColor = 'rgba(0,191,255,0.7)';
+          ctx.shadowBlur = 8;
+        }
         ctx.fillRect(x, y, w, h);
         ctx.shadowBlur = 0;
       }
@@ -292,17 +280,19 @@
         ball.x += ball.dx;
         ball.y += ball.dy;
 
-        // Отскок от верхнего и нижнего края
+        // Отскок от верхнего и нижнего края с эффектом
         if (ball.y <= 0) {
           ball.y = 0;
           ball.dy = -ball.dy;
+          edgeFlash.top = edgeFlash.maxFrames;
         }
         if (ball.y + BALL_SIZE >= HEIGHT) {
           ball.y = HEIGHT - BALL_SIZE;
           ball.dy = -ball.dy;
+          edgeFlash.bottom = edgeFlash.maxFrames;
         }
 
-        // Столкновение с ракетками
+        // Столкновение с ракетками с эффектом
         if (
           ball.x <= leftPaddle.x + PADDLE_WIDTH &&
           ball.x >= leftPaddle.x &&
@@ -313,6 +303,7 @@
           ball.dx = -ball.dx;
           let collidePoint = (ball.y + BALL_SIZE / 2) - (leftPaddle.y + PADDLE_HEIGHT / 2);
           ball.dy = collidePoint * 0.3;
+          leftPaddle.flashFrames = 6;
         }
 
         if (
@@ -325,6 +316,7 @@
           ball.dx = -ball.dx;
           let collidePoint = (ball.y + BALL_SIZE / 2) - (rightPaddle.y + PADDLE_HEIGHT / 2);
           ball.dy = collidePoint * 0.3;
+          rightPaddle.flashFrames = 6;
         }
 
         // Голы
@@ -338,6 +330,12 @@
           updateScore();
           resetBall();
         }
+
+        // Уменьшаем счетчики эффектов
+        if (leftPaddle.flashFrames > 0) leftPaddle.flashFrames--;
+        if (rightPaddle.flashFrames > 0) rightPaddle.flashFrames--;
+        if (edgeFlash.top > 0) edgeFlash.top--;
+        if (edgeFlash.bottom > 0) edgeFlash.bottom--;
       }
 
       function updateScore() {
@@ -350,8 +348,21 @@
 
         drawNet();
 
-        drawRect(leftPaddle.x, leftPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff');
-        drawRect(rightPaddle.x, rightPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff');
+        // Края с эффектом вспышки
+        if (edgeFlash.top > 0) {
+          const alpha = edgeFlash.top / edgeFlash.maxFrames;
+          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+          ctx.fillRect(0, 0, WIDTH, 5);
+        }
+        if (edgeFlash.bottom > 0) {
+          const alpha = edgeFlash.bottom / edgeFlash.maxFrames;
+          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+          ctx.fillRect(0, HEIGHT - 5, WIDTH, 5);
+        }
+
+        // Ракетки с эффектом вспышки
+        drawRect(leftPaddle.x, leftPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff', leftPaddle.flashFrames);
+        drawRect(rightPaddle.x, rightPaddle.y, PADDLE_WIDTH, PADDLE_HEIGHT, '#00bfff', rightPaddle.flashFrames);
 
         drawCircle(ball.x + BALL_SIZE / 2, ball.y + BALL_SIZE / 2, BALL_SIZE / 2, '#00bfff');
 
@@ -374,10 +385,10 @@
         keys[e.key.toLowerCase()] = false;
       });
 
-      // Выбор режима по кнопкам
+      // Выбор режима по кнопкам — сразу перезапускаем игру
       modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          if (gameStarted) return; // нельзя менять во время игры
+          if (btn.classList.contains('active')) return; // если уже активен — ничего не делаем
           modeButtons.forEach(b => {
             b.classList.remove('active');
             b.setAttribute('aria-pressed', 'false');
@@ -389,11 +400,6 @@
         });
       });
 
-      // Кнопка рестарта
-      restartBtn.addEventListener('click', () => {
-        startGame();
-      });
-
       function startGame() {
         leftScore = 0;
         rightScore = 0;
@@ -401,12 +407,12 @@
 
         leftPaddle.y = HEIGHT / 2 - PADDLE_HEIGHT / 2;
         rightPaddle.y = HEIGHT / 2 - PADDLE_HEIGHT / 2;
-        resetBall();
+        leftPaddle.flashFrames = 0;
+        rightPaddle.flashFrames = 0;
+        edgeFlash.top = 0;
+        edgeFlash.bottom = 0;
 
-        canvas.style.display = 'block';
-        scoreboard.style.display = 'flex';
-        instructions.style.display = 'block';
-        restartBtn.style.display = 'inline-block';
+        resetBall();
 
         gameStarted = true;
         gameLoop();

@@ -2,624 +2,207 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ping Pong</title>
 <style>
-  html, body {
+  body, html {
     margin: 0; padding: 0; height: 100%;
-    background: #f5f5f5;
     display: flex; justify-content: center; align-items: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f0f0;
+    font-family: Arial, sans-serif;
     user-select: none;
-    -webkit-tap-highlight-color: transparent;
   }
-  #gameContainer {
-    position: relative;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-    touch-action: none;
-  }
-  canvas {
-    display: block;
-    background: #eaeaea;
-  }
-  #scoreBoard {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: #222;
-    pointer-events: none;
-  }
-  #timer {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    font-weight: 600;
-    font-size: 1.2rem;
-    color: #222;
-    pointer-events: none;
-  }
-  #modeSelect {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.15);
-    padding: 24px 32px;
-    text-align: center;
-    user-select: none;
-    z-index: 10;
-  }
-  #modeSelect button {
+  #gameCanvas {
     background: #222;
-    color: #fff;
-    border: none;
+    display: block;
     border-radius: 8px;
-    padding: 12px 28px;
-    margin: 12px 8px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
   }
-  #modeSelect button:hover {
-    background: #555;
-  }
-  @media (max-width: 600px) {
-    #modeSelect {
-      width: 90vw;
-      padding: 20px;
-    }
-    #modeSelect button {
-      width: 100%;
-      margin: 8px 0;
-    }
+  #score {
+    position: absolute;
+    top: 20px;
+    font-size: 24px;
+    color: #222;
+    font-weight: bold;
+    user-select: none;
   }
 </style>
 </head>
 <body>
 
-<div id="gameContainer">
-  <canvas id="gameCanvas"></canvas>
-  <div id="scoreBoard"></div>
-  <div id="timer"></div>
-  <div id="modeSelect">
-    <div style="margin-bottom: 16px; font-size: 1.3rem; color: #222;">Выберите режим игры</div>
-    <button id="btnPvP">Два игрока</button>
-    <button id="btnPvBot">Против бота</button>
-  </div>
-</div>
+<canvas id="gameCanvas" width="700" height="400"></canvas>
+<div id="score" style="position: fixed; top: 10px; width: 100%; text-align: center;">0 : 0</div>
 
 <script>
 (() => {
-  // Конфигурация
-  const GAME_DURATION = 120000; // 2 минуты
-  const FPS = 60;
-  const COLORS = {
-    background: '#eaeaea',
-    paddle: '#222',
-    ball: '#222',
-    ballHitPaddle: '#0077cc',
-    ballHitWall: '#cc5500',
-    score: '#222',
-    border: '#222',
-  };
-
-  // Элементы
-  const container = document.getElementById('gameContainer');
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const scoreBoard = document.getElementById('scoreBoard');
-  const timerDisplay = document.getElementById('timer');
-  const modeSelect = document.getElementById('modeSelect');
-  const btnPvP = document.getElementById('btnPvP');
-  const btnPvBot = document.getElementById('btnPvBot');
+  const scoreDiv = document.getElementById('score');
 
-  // Переменные
-  let width, height;
-  let verticalOrientation = false;
-  let gameStarted = false;
-  let gameMode = null; // 'pvp' или 'pvbot'
-  let startTime = 0;
-  let gameInterval = null;
-  let keysPressed = {};
-  let touchData = { active: false, id: null, paddle: null };
+  const WIDTH = canvas.width;
+  const HEIGHT = canvas.height;
 
-  // Классы
-  class Paddle {
-    constructor(x, y, length, thickness, vertical) {
-      this.x = x;
-      this.y = y;
-      this.length = length;
-      this.thickness = thickness;
-      this.vertical = vertical;
-      this.speed = 8;
-      this.movePos = 0;
-    }
-    draw(ctx) {
-      ctx.fillStyle = COLORS.paddle;
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = COLORS.border;
-      ctx.beginPath();
-      if (this.vertical) {
-        ctx.rect(this.movePos, this.y, this.thickness, this.length);
-      } else {
-        ctx.rect(this.x, this.movePos, this.length, this.thickness);
-      }
-      ctx.fill();
-      ctx.stroke();
-    }
-    clamp(maxWidth, maxHeight) {
-      if (this.vertical) {
-        if (this.movePos < 0) this.movePos = 0;
-        if (this.movePos + this.thickness > maxWidth) this.movePos = maxWidth - this.thickness;
-      } else {
-        if (this.movePos < 0) this.movePos = 0;
-        if (this.movePos + this.thickness > maxHeight) this.movePos = maxHeight - this.thickness;
-      }
-    }
-  }
+  // Параметры ракеток
+  const PADDLE_WIDTH = 10;
+  const PADDLE_HEIGHT = 80;
+  const PADDLE_SPEED = 6;
 
-  class Ball {
-    constructor(radius) {
-      this.radius = radius;
-      this.reset();
-      this.color = COLORS.ball;
-      this.colorTimeout = 0;
-    }
-    reset() {
-      this.x = width / 2;
-      this.y = height / 2;
-      const angle = (Math.random() * Math.PI / 3) - Math.PI / 6;
-      const speedBase = 6;
-      const dir = Math.random() < 0.5 ? 1 : -1;
-      if (verticalOrientation) {
-        this.speedX = speedBase * Math.sin(angle);
-        this.speedY = dir * speedBase * Math.cos(angle);
-      } else {
-        this.speedX = dir * speedBase * Math.cos(angle);
-        this.speedY = speedBase * Math.sin(angle);
-      }
-    }
-    draw(ctx) {
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = this.color;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-      if (this.colorTimeout > 0) {
-        this.colorTimeout--;
-        if (this.colorTimeout === 0) this.color = COLORS.ball;
-      }
-    }
-    flashColor(newColor) {
-      this.color = newColor;
-      this.colorTimeout = FPS * 0.15;
-    }
-  }
+  // Параметры мяча
+  const BALL_RADIUS = 8;
+  const BALL_SPEED = 5;
 
-  // Игровые объекты
-  let paddle1, paddle2, ball;
-  let score1 = 0, score2 = 0;
+  // Игроки
+  const paddle1 = {
+    x: 10,
+    y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
+    width: PADDLE_WIDTH,
+    height: PADDLE_HEIGHT,
+    dy: 0
+  };
 
-  // Инициализация игры
-  function initGame() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    verticalOrientation = w < 600 || h > w;
+  const paddle2 = {
+    x: WIDTH - 10 - PADDLE_WIDTH,
+    y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
+    width: PADDLE_WIDTH,
+    height: PADDLE_HEIGHT,
+    dy: 0
+  };
 
-    if (verticalOrientation) {
-      width = Math.min(w * 0.95, 400);
-      height = width * 1.6;
-    } else {
-      width = Math.min(w * 0.95, 700);
-      height = width * 0.6;
-    }
+  // Мяч
+  const ball = {
+    x: WIDTH / 2,
+    y: HEIGHT / 2,
+    radius: BALL_RADIUS,
+    speedX: BALL_SPEED * (Math.random() < 0.5 ? 1 : -1),
+    speedY: BALL_SPEED * (Math.random() * 2 - 1)
+  };
 
-    canvas.width = width;
-    canvas.height = height;
-    container.style.width = width + 'px';
-    container.style.height = height + 'px';
+  // Счет
+  let score1 = 0;
+  let score2 = 0;
 
-    const paddleLength = verticalOrientation ? height * 0.15 : height * 0.25;
-    const paddleThickness = verticalOrientation ? width * 0.04 : width * 0.02;
-    const ballRadius = Math.min(width, height) * 0.025;
+  // Управление
+  const keys = {};
 
-    if (verticalOrientation) {
-      paddle1 = new Paddle(0, 0, paddleLength, paddleThickness, true);
-      paddle1.movePos = (width - paddleThickness) / 2;
-      paddle2 = new Paddle(0, height - paddleLength, paddleLength, paddleThickness, true);
-      paddle2.movePos = (width - paddleThickness) / 2;
-    } else {
-      paddle1 = new Paddle(0, 0, paddleLength, paddleThickness, false);
-      paddle1.movePos = (height - paddleThickness) / 2;
-      paddle2 = new Paddle(width - paddleLength, 0, paddleLength, paddleThickness, false);
-      paddle2.movePos = (height - paddleThickness) / 2;
-    }
-
-    ball = new Ball(ballRadius);
-
-    score1 = 0;
-    score2 = 0;
-    startTime = performance.now();
-
-    updateScoreBoard();
-    updateTimer(0);
-
-    modeSelect.style.display = 'none';
-    gameStarted = true;
-
-    if (gameInterval) clearInterval(gameInterval);
-    gameInterval = setInterval(gameLoop, 1000 / FPS);
-  }
-
-  // Обновление счета и таймера
-  function updateScoreBoard() {
-    scoreBoard.textContent = `Игрок 1: ${score1} — ${score2} :Игрок 2`;
-  }
-  function updateTimer(elapsed) {
-    const remaining = Math.max(0, GAME_DURATION - elapsed);
-    const seconds = Math.floor(remaining / 1000);
-    const ms = Math.floor((remaining % 1000) / 10);
-    timerDisplay.textContent = `Время: ${seconds < 10 ? '0' : ''}${seconds}:${ms < 10 ? '0' : ''}${ms}`;
-  }
-
-  // Столкновения мяча с ракетками
-  function checkPaddleCollision() {
-    if (verticalOrientation) {
-      if (
-        ball.y - ball.radius <= paddle1.y + paddle1.length &&
-        ball.x + ball.radius >= paddle1.movePos &&
-        ball.x - ball.radius <= paddle1.movePos + paddle1.thickness &&
-        ball.speedY < 0
-      ) {
-        ball.speedY = -ball.speedY;
-        ball.y = paddle1.y + paddle1.length + ball.radius;
-        ball.flashColor(COLORS.ballHitPaddle);
-      }
-      if (
-        ball.y + ball.radius >= paddle2.y &&
-        ball.x + ball.radius >= paddle2.movePos &&
-        ball.x - ball.radius <= paddle2.movePos + paddle2.thickness &&
-        ball.speedY > 0
-      ) {
-        ball.speedY = -ball.speedY;
-        ball.y = paddle2.y - ball.radius;
-        ball.flashColor(COLORS.ballHitPaddle);
-      }
-    } else {
-      if (
-        ball.x - ball.radius <= paddle1.x + paddle1.length &&
-        ball.y + ball.radius >= paddle1.movePos &&
-        ball.y - ball.radius <= paddle1.movePos + paddle1.thickness &&
-        ball.speedX < 0
-      ) {
-        ball.speedX = -ball.speedX;
-        ball.x = paddle1.x + paddle1.length + ball.radius;
-        ball.flashColor(COLORS.ballHitPaddle);
-      }
-      if (
-        ball.x + ball.radius >= paddle2.x &&
-        ball.y + ball.radius >= paddle2.movePos &&
-        ball.y - ball.radius <= paddle2.movePos + paddle2.thickness &&
-        ball.speedX > 0
-      ) {
-        ball.speedX = -ball.speedX;
-        ball.x = paddle2.x - ball.radius;
-        ball.flashColor(COLORS.ballHitPaddle);
-      }
-    }
-  }
-
-  // Столкновения мяча с бортами
-  function checkWallCollision() {
-    if (verticalOrientation) {
-      if (ball.x - ball.radius <= 0) {
-        ball.speedX = -ball.speedX;
-        ball.x = ball.radius;
-        ball.flashColor(COLORS.ballHitWall);
-      }
-      if (ball.x + ball.radius >= width) {
-        ball.speedX = -ball.speedX;
-        ball.x = width - ball.radius;
-        ball.flashColor(COLORS.ballHitWall);
-      }
-    } else {
-      if (ball.y - ball.radius <= 0) {
-        ball.speedY = -ball.speedY;
-        ball.y = ball.radius;
-        ball.flashColor(COLORS.ballHitWall);
-      }
-      if (ball.y + ball.radius >= height) {
-        ball.speedY = -ball.speedY;
-        ball.y = height - ball.radius;
-        ball.flashColor(COLORS.ballHitWall);
-      }
-    }
-  }
-
-  // Проверка забитых очков
-  function checkScore() {
-    if (verticalOrientation) {
-      if (ball.y + ball.radius < 0) {
-        score2++;
-        ball.reset();
-      } else if (ball.y - ball.radius > height) {
-        score1++;
-        ball.reset();
-      }
-    } else {
-      if (ball.x + ball.radius < 0) {
-        score2++;
-        ball.reset();
-      } else if (ball.x - ball.radius > width) {
-        score1++;
-        ball.reset();
-      }
-    }
-  }
-
-  // Управление игроками
-  function handleInput() {
-    if (!gameStarted) return;
-
-    // Игрок 1
-    if (verticalOrientation) {
-      if (keysPressed['a'] || keysPressed['A'] || keysPressed['ArrowLeft']) {
-        paddle1.movePos -= paddle1.speed;
-      }
-      if (keysPressed['d'] || keysPressed['D'] || keysPressed['ArrowRight']) {
-        paddle1.movePos += paddle1.speed;
-      }
-      paddle1.clamp(width, height);
-    } else {
-      if (keysPressed['w'] || keysPressed['W']) {
-        paddle1.movePos -= paddle1.speed;
-      }
-      if (keysPressed['s'] || keysPressed['S']) {
-        paddle1.movePos += paddle1.speed;
-      }
-      paddle1.clamp(width, height);
-    }
-
-    // Игрок 2 или бот
-    if (gameMode === 'pvp') {
-      if (verticalOrientation) {
-        if (keysPressed['j'] || keysPressed['J']) {
-          paddle2.movePos -= paddle2.speed;
-        }
-        if (keysPressed['l'] || keysPressed['L']) {
-          paddle2.movePos += paddle2.speed;
-        }
-        paddle2.clamp(width, height);
-      } else {
-        if (keysPressed['ArrowUp']) {
-          paddle2.movePos -= paddle2.speed;
-        }
-        if (keysPressed['ArrowDown']) {
-          paddle2.movePos += paddle2.speed;
-        }
-        paddle2.clamp(width, height);
-      }
-    } else if (gameMode === 'pvbot') {
-      const botSpeed = paddle2.speed * 0.7;
-      if (verticalOrientation) {
-        const targetX = ball.x - paddle2.thickness / 2;
-        if (paddle2.movePos + paddle2.thickness / 2 < targetX - 5) {
-          paddle2.movePos += botSpeed;
-        } else if (paddle2.movePos + paddle2.thickness / 2 > targetX + 5) {
-          paddle2.movePos -= botSpeed;
-        }
-        paddle2.clamp(width, height);
-      } else {
-        const targetY = ball.y - paddle2.thickness / 2;
-        if (paddle2.movePos + paddle2.thickness / 2 < targetY - 5) {
-          paddle2.movePos += botSpeed;
-        } else if (paddle2.movePos + paddle2.thickness / 2 > targetY + 5) {
-          paddle2.movePos -= botSpeed;
-        }
-        paddle2.clamp(width, height);
-      }
-    }
-  }
-
-  // Обработка касаний (мобильные)
-  function onTouchStart(e) {
-    if (!gameStarted) return;
-    for (const touch of e.changedTouches) {
-      const rect = canvas.getBoundingClientRect();
-      const tx = touch.clientX - rect.left;
-      const ty = touch.clientY - rect.top;
-      if (verticalOrientation) {
-        if (ty < height / 2) {
-          touchData.active = true;
-          touchData.id = touch.identifier;
-          touchData.paddle = paddle1;
-          paddle1.movePos = tx - paddle1.thickness / 2;
-          paddle1.clamp(width, height);
-        } else {
-          touchData.active = true;
-          touchData.id = touch.identifier;
-          touchData.paddle = paddle2;
-          paddle2.movePos = tx - paddle2.thickness / 2;
-          paddle2.clamp(width, height);
-        }
-      } else {
-        if (tx < width / 2) {
-          touchData.active = true;
-          touchData.id = touch.identifier;
-          touchData.paddle = paddle1;
-          paddle1.movePos = ty - paddle1.thickness / 2;
-          paddle1.clamp(width, height);
-        } else {
-          touchData.active = true;
-          touchData.id = touch.identifier;
-          touchData.paddle = paddle2;
-          paddle2.movePos = ty - paddle2.thickness / 2;
-          paddle2.clamp(width, height);
-        }
-      }
-    }
-  }
-  function onTouchMove(e) {
-    if (!gameStarted) return;
-    for (const touch of e.changedTouches) {
-      if (touch.identifier === touchData.id && touchData.paddle) {
-        const rect = canvas.getBoundingClientRect();
-        const tx = touch.clientX - rect.left;
-        const ty = touch.clientY - rect.top;
-        if (verticalOrientation) {
-          touchData.paddle.movePos = tx - touchData.paddle.thickness / 2;
-          touchData.paddle.clamp(width, height);
-        } else {
-          touchData.paddle.movePos = ty - touchData.paddle.thickness / 2;
-          touchData.paddle.clamp(width, height);
-        }
-      }
-    }
-  }
-  function onTouchEnd(e) {
-    for (const touch of e.changedTouches) {
-      if (touch.identifier === touchData.id) {
-        touchData.active = false;
-        touchData.id = null;
-        touchData.paddle = null;
-      }
-    }
-  }
-
-  // Основной цикл
-  function gameLoop() {
-    const now = performance.now();
-    const elapsed = now - startTime;
-
-    updateTimer(elapsed);
-
-    if (elapsed >= GAME_DURATION) {
-      endGame();
-      return;
-    }
-
-    handleInput();
-    ball.update();
-    checkPaddleCollision();
-    checkWallCollision();
-    checkScore();
-    updateScoreBoard();
-    draw();
-  }
-
-  // Отрисовка
-  function draw() {
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = COLORS.background;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = COLORS.border;
-    ctx.beginPath();
-    ctx.rect(1.5, 1.5, width - 3, height - 3);
-    ctx.stroke();
-
-    paddle1.draw(ctx);
-    paddle2.draw(ctx);
-    ball.draw(ctx);
-  }
-
-  // Конец игры
-  function endGame() {
-    gameStarted = false;
-    clearInterval(gameInterval);
-    gameInterval = null;
-
-    let winnerText = '';
-    if (score1 > score2) winnerText = 'Победил Игрок 1!';
-    else if (score2 > score1) winnerText = 'Победил Игрок 2!';
-    else winnerText = 'Ничья!';
-
-    modeSelect.style.display = 'block';
-    modeSelect.innerHTML = `
-      <div style="margin-bottom: 16px; font-size: 1.3rem; color: #222;">${winnerText}</div>
-      <button id="btnPvP">Два игрока</button>
-      <button id="btnPvBot">Против бота</button>
-    `;
-
-    document.getElementById('btnPvP').addEventListener('click', () => {
-      gameMode = 'pvp';
-      initGame();
-    });
-    document.getElementById('btnPvBot').addEventListener('click', () => {
-      gameMode = 'pvbot';
-      initGame();
-    });
-  }
-
-  // События клавиатуры
   window.addEventListener('keydown', e => {
-    keysPressed[e.key] = true;
+    keys[e.key.toLowerCase()] = true;
   });
   window.addEventListener('keyup', e => {
-    keysPressed[e.key] = false;
+    keys[e.key.toLowerCase()] = false;
   });
 
-  // События касаний
-  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-  canvas.addEventListener('touchend', onTouchEnd, { passive: false });
-  canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
-
-  // Ресайз
-  window.addEventListener('resize', () => {
-    if (!gameStarted) return;
-    initGame();
-  });
-
-  // Кнопки выбора режима
-  btnPvP.addEventListener('click', () => {
-    gameMode = 'pvp';
-    initGame();
-  });
-  btnPvBot.addEventListener('click', () => {
-    gameMode = 'pvbot';
-    initGame();
-  });
-
-  // Инициализация при загрузке
-  function init() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    verticalOrientation = w < 600 || h > w;
-
-    if (verticalOrientation) {
-      width = Math.min(w * 0.95, 400);
-      height = width * 1.6;
+  function update() {
+    // Движение ракеток
+    if (keys['w']) {
+      paddle1.dy = -PADDLE_SPEED;
+    } else if (keys['s']) {
+      paddle1.dy = PADDLE_SPEED;
     } else {
-      width = Math.min(w * 0.95, 700);
-      height = width * 0.6;
+      paddle1.dy = 0;
     }
-    canvas.width = width;
-    canvas.height = height;
-    container.style.width = width + 'px';
-    container.style.height = height + 'px';
 
-    scoreBoard.textContent = '';
-    timerDisplay.textContent = '';
-    modeSelect.style.display = 'block';
+    if (keys['arrowup']) {
+      paddle2.dy = -PADDLE_SPEED;
+    } else if (keys['arrowdown']) {
+      paddle2.dy = PADDLE_SPEED;
+    } else {
+      paddle2.dy = 0;
+    }
+
+    paddle1.y += paddle1.dy;
+    paddle2.y += paddle2.dy;
+
+    // Ограничение ракеток по полю
+    paddle1.y = Math.max(0, Math.min(HEIGHT - paddle1.height, paddle1.y));
+    paddle2.y = Math.max(0, Math.min(HEIGHT - paddle2.height, paddle2.y));
+
+    // Движение мяча
+    ball.x += ball.speedX;
+    ball.y += ball.speedY;
+
+    // Столкновение с верхом и низом
+    if (ball.y - ball.radius < 0 || ball.y + ball.radius > HEIGHT) {
+      ball.speedY = -ball.speedY;
+    }
+
+    // Столкновение с ракетками
+    if (
+      ball.x - ball.radius < paddle1.x + paddle1.width &&
+      ball.y > paddle1.y &&
+      ball.y < paddle1.y + paddle1.height
+    ) {
+      ball.speedX = -ball.speedX;
+      // Добавим немного вариации по Y
+      let deltaY = ball.y - (paddle1.y + paddle1.height / 2);
+      ball.speedY = deltaY * 0.3;
+      ball.x = paddle1.x + paddle1.width + ball.radius; // чтобы не застрял
+    }
+
+    if (
+      ball.x + ball.radius > paddle2.x &&
+      ball.y > paddle2.y &&
+      ball.y < paddle2.y + paddle2.height
+    ) {
+      ball.speedX = -ball.speedX;
+      let deltaY = ball.y - (paddle2.y + paddle2.height / 2);
+      ball.speedY = deltaY * 0.3;
+      ball.x = paddle2.x - ball.radius;
+    }
+
+    // Забитые очки
+    if (ball.x < 0) {
+      score2++;
+      resetBall();
+    } else if (ball.x > WIDTH) {
+      score1++;
+      resetBall();
+    }
+
+    scoreDiv.textContent = `${score1} : ${score2}`;
   }
 
-  init();
+  function resetBall() {
+    ball.x = WIDTH / 2;
+    ball.y = HEIGHT / 2;
+    ball.speedX = BALL_SPEED * (Math.random() < 0.5 ? 1 : -1);
+    ball.speedY = BALL_SPEED * (Math.random() * 2 - 1);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+    // Поле
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // Центр линия
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 15]);
+    ctx.beginPath();
+    ctx.moveTo(WIDTH / 2, 0);
+    ctx.lineTo(WIDTH / 2, HEIGHT);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Ракетки
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+    ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
+
+    // Мяч
+    ctx.beginPath();
+    ctx.fillStyle = '#fff';
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
 })();
 </script>
 

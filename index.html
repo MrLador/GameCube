@@ -72,10 +72,19 @@
     background: #0077cc;
     color: white;
     transition: background-color 0.3s ease;
-    width: 220px;
+    width: 260px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   #menu button:hover {
     background: #005fa3;
+  }
+  /* Эмодзи чуть больше и с отступом */
+  #menu button span.emoji {
+    font-size: 28px;
+    user-select: none;
   }
 </style>
 </head>
@@ -92,8 +101,8 @@
 
 <div id="menu">
   <h1>Выберите режим игры</h1>
-  <button id="btnPvP">Игрок против Игрока</button>
-  <button id="btnPvBot">Игрок против Бота</button>
+  <button id="btnPvP"><span class="emoji">👤vs👤</span> Игрок против Игрока</button>
+  <button id="btnPvBot"><span class="emoji">👤vs🤖</span> Игрок против Бота</button>
 </div>
 
 <script>

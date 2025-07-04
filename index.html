@@ -27,6 +27,7 @@
     align-items: center;
     gap: 10px;
     width: 120px;
+    z-index: 20;
   }
   #score1 {
     flex: 1;
@@ -49,7 +50,6 @@
     background: #222;
     border-radius: 8px;
     touch-action: none;
-    /* Центрируем содержимое */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -59,7 +59,6 @@
     width: 100%;
     height: 100%;
     background: transparent;
-    /* По умолчанию без поворота */
     transform-origin: center center;
     transition: transform 0.3s ease;
   }
@@ -68,7 +67,7 @@
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.7);
     display: flex; flex-direction: column; justify-content: center; align-items: center;
-    z-index: 10;
+    z-index: 30;
   }
   #menu h1 {
     color: #fff;
@@ -109,16 +108,16 @@
   /* Мобильная версия: вертикальное растяжение и поворот */
   @media (max-width: 600px) {
     #gameContainer {
-      width: 90vw;
+      width: 80vw; /* уменьшили ширину */
       max-width: 400px;
       aspect-ratio: 4 / 7; /* вертикальное соотношение */
+      margin-top: 10px;
+      margin-bottom: 10px;
     }
     #gameCanvas {
-      /* Поворот на 90 градусов по часовой стрелке */
       transform: rotate(90deg);
-      /* Чтобы после поворота канвас не выходил за пределы контейнера */
-      width: 100vh; /* высота экрана */
-      height: 100vw; /* ширина экрана */
+      width: 100vh;
+      height: 100vw;
       max-width: none;
       max-height: none;
     }
@@ -126,6 +125,8 @@
       width: 140px;
       font-size: 28px;
       margin-bottom: 5px;
+      position: relative;
+      z-index: 50;
     }
     #menu h1 {
       font-size: 24px;
@@ -163,7 +164,6 @@
   const btnPvP = document.getElementById('btnPvP');
   const btnPvBot = document.getElementById('btnPvBot');
 
-  // Логика игры в исходных координатах (горизонтальных)
   const BASE_WIDTH = 700;
   const BASE_HEIGHT = 400;
   const PADDLE_WIDTH = 10;
@@ -178,24 +178,23 @@
   let score2 = 0;
 
   const keys = {};
-  let touchPositions = { p1X: null, p2X: null }; // теперь по X, т.к. ракетки двигаются по горизонтали
+  let touchPositions = { p1X: null, p2X: null };
 
   let canvasRect = null;
   let gameMode = null;
   let isPaused = false;
 
-  // Проверка мобильного устройства
   function isMobile() {
     return window.matchMedia("(max-width: 600px)").matches;
   }
 
-  // Инициализация объектов
   function initObjects() {
     paddle1 = {
       x: 10,
       y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
       width: PADDLE_WIDTH,
       height: PADDLE_HEIGHT,
+      dx: 0,
       dy: 0
     };
     paddle2 = {
@@ -203,6 +202,7 @@
       y: BASE_HEIGHT / 2 - PADDLE_HEIGHT / 2,
       width: PADDLE_WIDTH,
       height: PADDLE_HEIGHT,
+      dx: 0,
       dy: 0
     };
     resetBall(Math.random() < 0.5 ? 1 : -1);
@@ -216,12 +216,10 @@
     score2Span.textContent = score2;
   }
 
-  // Ограничение значения
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
   }
 
-  // Сброс мяча
   function resetBall(direction) {
     ball = {
       x: BASE_WIDTH / 2,
@@ -232,7 +230,6 @@
     };
   }
 
-  // Пауза и сброс мяча после очка
   function pauseAndResetBall(direction) {
     isPaused = true;
     setTimeout(() => {
@@ -241,13 +238,11 @@
     }, BALL_RESET_DELAY);
   }
 
-  // Обновление логики
   function update() {
     if (isPaused) return;
 
     if (isMobile()) {
-      // В мобильной версии ракетки двигаются по X (горизонтально)
-      // Игрок 1 — нижняя половина экрана — управляет нижней ракеткой (paddle1)
+      // Мобильная версия: ракетки двигаются по X (горизонтально)
       if (touchPositions.p1X !== null) {
         let center = paddle1.x + paddle1.width / 2;
         let diff = touchPositions.p1X - center;
@@ -257,7 +252,6 @@
       }
       paddle1.x = clamp(paddle1.x + paddle1.dx, 0, BASE_WIDTH - paddle1.width);
 
-      // Игрок 2 — верхняя половина экрана — управляет верхней ракеткой (paddle2)
       if (gameMode === 'pvp') {
         if (touchPositions.p2X !== null) {
           let center = paddle2.x + paddle2.width / 2;
@@ -268,7 +262,6 @@
         }
         paddle2.x = clamp(paddle2.x + paddle2.dx, 0, BASE_WIDTH - paddle2.width);
       } else if (gameMode === 'pvbot') {
-        // ИИ двигает верхнюю ракетку по мячу по X
         const centerPaddle = paddle2.x + paddle2.width / 2;
         if (centerPaddle < ball.x - 10) {
           paddle2.x = clamp(paddle2.x + PADDLE_SPEED * 0.6, 0, BASE_WIDTH - paddle2.width);
@@ -277,7 +270,7 @@
         }
       }
     } else {
-      // ПК — классическое управление по Y
+      // ПК версия: ракетки двигаются по Y (вертикально)
       paddle1.dy = keys['KeyW'] ? -PADDLE_SPEED : keys['KeyS'] ? PADDLE_SPEED : 0;
       paddle1.y = clamp(paddle1.y + paddle1.dy, 0, BASE_HEIGHT - paddle1.height);
 
@@ -298,25 +291,57 @@
     ball.x += ball.speedX;
     ball.y += ball.speedY;
 
-    // Столкновения с границами
-    if (ball.y - ball.radius < 0) {
-      ball.y = ball.radius;
-      ball.speedY = -ball.speedY;
-    } else if (ball.y + ball.radius > BASE_HEIGHT) {
-      ball.y = BASE_HEIGHT - ball.radius;
-      ball.speedY = -ball.speedY;
+    // Проверка голов (сначала!)
+    if (!isMobile()) {
+      // ПК: голы по выходу мяча за левую или правую границу
+      if (ball.x < 0) {
+        score2++;
+        updateScore();
+        pauseAndResetBall(1);
+        return;
+      } else if (ball.x > BASE_WIDTH) {
+        score1++;
+        updateScore();
+        pauseAndResetBall(-1);
+        return;
+      }
+    } else {
+      // Мобильная версия: голы по выходу мяча за верхнюю или нижнюю границу (т.к. поле повернуто)
+      if (ball.y < 0) {
+        score2++;
+        updateScore();
+        pauseAndResetBall(1);
+        return;
+      } else if (ball.y > BASE_HEIGHT) {
+        score1++;
+        updateScore();
+        pauseAndResetBall(-1);
+        return;
+      }
     }
-    if (ball.x - ball.radius < 0) {
-      ball.x = ball.radius;
-      ball.speedX = -ball.speedX;
-    } else if (ball.x + ball.radius > BASE_WIDTH) {
-      ball.x = BASE_WIDTH - ball.radius;
-      ball.speedX = -ball.speedX;
+
+    // Столкновения с границами (верх-низ для ПК, левый-правый для моб)
+    if (!isMobile()) {
+      if (ball.y - ball.radius < 0) {
+        ball.y = ball.radius;
+        ball.speedY = -ball.speedY;
+      } else if (ball.y + ball.radius > BASE_HEIGHT) {
+        ball.y = BASE_HEIGHT - ball.radius;
+        ball.speedY = -ball.speedY;
+      }
+    } else {
+      if (ball.x - ball.radius < 0) {
+        ball.x = ball.radius;
+        ball.speedX = -ball.speedX;
+      } else if (ball.x + ball.radius > BASE_WIDTH) {
+        ball.x = BASE_WIDTH - ball.radius;
+        ball.speedX = -ball.speedX;
+      }
     }
 
     // Столкновения с ракетками
     if (!isMobile()) {
-      // ПК — вертикальные ракетки, проверяем по X и Y
+      // ПК — вертикальные ракетки
       if (
         ball.x - ball.radius < paddle1.x + paddle1.width &&
         ball.y > paddle1.y &&
@@ -340,7 +365,7 @@
         ball.speedY = deltaY * 0.3;
       }
     } else {
-      // Мобильная версия — ракетки горизонтальные, проверяем по Y и X наоборот
+      // Мобильная версия — ракетки горизонтальные, двигаются по X, мяч двигается по Y
       if (
         ball.y + ball.radius > paddle1.y &&
         ball.y - ball.radius < paddle1.y + paddle1.height &&
@@ -366,33 +391,8 @@
         ball.speedX = deltaX * 0.3;
       }
     }
-
-    // Очки
-    if (!isMobile()) {
-      if (ball.x < 0) {
-        score2++;
-        updateScore();
-        pauseAndResetBall(1);
-      } else if (ball.x > BASE_WIDTH) {
-        score1++;
-        updateScore();
-        pauseAndResetBall(-1);
-      }
-    } else {
-      // В мобильной версии считаем очки по Y (т.к. поле повернуто)
-      if (ball.y > BASE_HEIGHT) {
-        score1++;
-        updateScore();
-        pauseAndResetBall(-1);
-      } else if (ball.y < 0) {
-        score2++;
-        updateScore();
-        pauseAndResetBall(1);
-      }
-    }
   }
 
-  // Отрисовка
   function draw() {
     ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
 
@@ -410,7 +410,6 @@
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Ракетки
     ctx.fillStyle = '#fff';
 
     if (!isMobile()) {
@@ -418,10 +417,8 @@
       ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
       ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
     } else {
-      // Мобильная — ракетки повернуты, рисуем горизонтально
-      // paddle1 — нижняя ракетка (нижняя часть экрана)
+      // Мобильная — ракетки горизонтальные (двигаются по X)
       ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
-      // paddle2 — верхняя ракетка
       ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
     }
 
@@ -432,14 +429,12 @@
     ctx.fill();
   }
 
-  // Основной цикл
   function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
   }
 
-  // Обработчики клавиатуры
   window.addEventListener('keydown', e => {
     keys[e.code] = true;
   });
@@ -447,14 +442,12 @@
     keys[e.code] = false;
   });
 
-  // Обновление размеров канваса
   function updateCanvasRect() {
     canvasRect = canvas.getBoundingClientRect();
   }
   window.addEventListener('resize', updateCanvasRect);
   updateCanvasRect();
 
-  // Сенсорное управление
   canvas.addEventListener('touchstart', handleTouch, {passive: false});
   canvas.addEventListener('touchmove', handleTouch, {passive: false});
   canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
@@ -493,7 +486,6 @@
     }
   }
 
-  // Запуск игры
   function startGame(mode) {
     gameMode = mode;
     menu.style.display = 'none';

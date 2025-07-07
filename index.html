@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dust Racer Pro</title>
+    <title>Dust Racer Final</title>
     <style>
         body { 
             margin: 0; 
             overflow: hidden; 
-            background: #2c3e50; 
+            background: #2ecc71; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -23,6 +23,7 @@
             color: white; 
             font-family: Arial; 
             font-size: 20px;
+            text-shadow: 2px 2px 2px black;
         }
     </style>
 </head>
@@ -33,17 +34,17 @@
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const SCALE = 0.7;
-canvas.width = 1200 * SCALE;
-canvas.height = 900 * SCALE;
+const SCALE = 0.8;
+canvas.width = 1000 * SCALE;
+canvas.height = 800 * SCALE;
 
+// Полностью переработанный трек в форме восьмёрки
 const TRACK = [
-    {x: 600, y: 800, w: 400},    // Стартовая прямая
-    {x: 600, y: 500, w: 400, r: 30}, 
-    {x: 900, y: 200, w: 400, r: 100}, 
-    {x: 600, y: -100, w: 400},    
-    {x: 300, y: 200, w: 400, r: -100}, 
-    {x: 600, y: 500, w: 400, r: -30}  
+    {x: 500, y: 700, w: 300, type: 'straight'},  // Старт
+    {x: 700, y: 500, w: 300, r: 90},            // Правый поворот
+    {x: 500, y: 300, w: 300, type: 'straight'}, // Верхняя прямая
+    {x: 300, y: 500, w: 300, r: -90},           // Левый поворот
+    {x: 500, y: 700, w: 300, type: 'straight'}  // Финиш
 ];
 
 class Car {
@@ -51,13 +52,14 @@ class Car {
         this.reset();
         this.color = color;
         this.maxSpeed = 8;
+        this.steering = 0;
     }
 
     reset() {
-        this.x = 600 * SCALE;
-        this.y = 800 * SCALE;
+        this.x = 500 * SCALE;
+        this.y = 700 * SCALE;
         this.speed = 0;
-        this.angle = 90; // Начальный угол смотрит вверх
+        this.angle = 0; // 0 = вправо, 90 = вверх
         this.laps = 0;
         this.checkpoint = 0;
         this.velocity = { x: 0, y: 0 };
@@ -66,21 +68,23 @@ class Car {
     draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate((this.angle - 90) * Math.PI / 180); // Корректировка направления
+        ctx.rotate((this.angle + 90) * Math.PI / 180); // Исправленное вращение
         
-        // Кузов
+        // Кузов с тенью
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 5;
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.roundRect(-20*SCALE, -10*SCALE, 40*SCALE, 20*SCALE, 5*SCALE);
         ctx.fill();
         
         // Стекло
-        ctx.fillStyle = '#ecf0f1';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.beginPath();
         ctx.roundRect(-15*SCALE, -8*SCALE, 30*SCALE, 10*SCALE, 3*SCALE);
         ctx.fill();
         
-        // Колёса
+        // Колёса с анимацией
         ctx.fillStyle = '#2c3e50';
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, y]) => {
             ctx.beginPath();
@@ -92,41 +96,63 @@ class Car {
     }
 
     update() {
-        // Обновление позиции с учетом вектора движения
+        // Плавное управление
+        this.angle += this.steering * (this.speed * 0.1);
+        this.velocity.x = Math.cos((this.angle) * Math.PI / 180) * this.speed;
+        this.velocity.y = Math.sin((this.angle) * Math.PI / 180) * this.speed;
+        
         this.x += this.velocity.x;
         this.y += this.velocity.y;
         
-        // Постепенное замедление
-        this.velocity.x *= 0.96;
-        this.velocity.y *= 0.96;
+        // Естественное замедление
+        this.speed *= 0.97;
+        this.steering *= 0.9;
     }
 }
 
 const player = new Car('#e74c3c');
-const bots = Array.from({length: 5}, (_, i) => 
-    new Car(['#3498db', '#9b59b6', '#2ecc71', '#f1c40f', '#95a5a6'][i]));
+const bots = Array.from({length: 3}, (_, i) => 
+    new Car(['#3498db', '#9b59b6', '#2ecc71'][i]));
 
 function init() {
     bots.forEach((bot, i) => {
         bot.reset();
-        bot.x += (i - 2) * 60 * SCALE;
+        bot.x += (i - 1) * 80 * SCALE;
+        bot.y += 50 * SCALE;
         bot.maxSpeed = 6 + Math.random() * 2;
     });
 }
 
-function drawTrack() {
+function drawTrackSegment(segment) {
     ctx.fillStyle = '#7f8c8d';
-    TRACK.forEach(segment => {
+    ctx.strokeStyle = '#34495e';
+    ctx.lineWidth = 5*SCALE;
+    
+    if(segment.r) {
+        // Рисуем поворот
         ctx.beginPath();
-        ctx.roundRect(
-            (segment.x - segment.w/2) * SCALE, 
+        ctx.arc(
+            segment.x * SCALE, 
             segment.y * SCALE, 
             segment.w * SCALE, 
-            200 * SCALE, 
-            20 * SCALE
+            Math.PI*0.5, 
+            Math.PI*1.5
         );
         ctx.fill();
-    });
+        ctx.stroke();
+    } else {
+        // Прямая
+        ctx.beginPath();
+        ctx.roundRect(
+            (segment.x - segment.w/2) * SCALE,
+            segment.y * SCALE - 100*SCALE,
+            segment.w * SCALE,
+            200*SCALE,
+            20*SCALE
+        );
+        ctx.fill();
+        ctx.stroke();
+    }
 }
 
 function aiMove(bot) {
@@ -134,24 +160,14 @@ function aiMove(bot) {
     const dx = target.x * SCALE - bot.x;
     const dy = target.y * SCALE - bot.y;
     
-    // Плавный поворот
-    const targetAngle = Math.atan2(dy, dx) * 180 / Math.PI;
-    bot.angle += ((targetAngle + 90) - bot.angle) * 0.1;
+    const targetAngle = (Math.atan2(dy, dx) * 180 / Math.PI) - 90;
+    const angleDiff = ((targetAngle - bot.angle + 180) % 360) - 180;
     
-    if(Math.hypot(dx, dy) < 80 * SCALE) {
+    bot.steering = Math.max(-3, Math.min(3, angleDiff * 0.1));
+    bot.speed = Math.min(bot.maxSpeed, bot.speed + 0.05);
+    
+    if(Math.hypot(dx, dy) < 100 * SCALE) {
         bot.checkpoint = (bot.checkpoint + 1) % TRACK.length;
-    }
-    
-    // Управление скоростью
-    const acceleration = 0.1;
-    bot.velocity.x += Math.cos((bot.angle - 90) * Math.PI / 180) * acceleration;
-    bot.velocity.y += Math.sin((bot.angle - 90) * Math.PI / 180) * acceleration;
-    
-    // Ограничение скорости
-    const speed = Math.hypot(bot.velocity.x, bot.velocity.y);
-    if(speed > bot.maxSpeed) {
-        bot.velocity.x = (bot.velocity.x / speed) * bot.maxSpeed;
-        bot.velocity.y = (bot.velocity.y / speed) * bot.maxSpeed;
     }
 }
 
@@ -161,16 +177,18 @@ function checkCollision(a, b) {
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTrack();
     
-    // Обновление ботов
+    // Рисуем трек
+    TRACK.forEach(drawTrackSegment);
+    
+    // Обновляем ботов
     bots.forEach(bot => {
         aiMove(bot);
         bot.update();
         bot.draw();
     });
     
-    // Обновление игрока
+    // Обновляем игрока
     player.update();
     player.draw();
     
@@ -189,62 +207,44 @@ function gameLoop() {
     
     // Проверка чекпоинтов
     TRACK.forEach((seg, i) => {
-        if(Math.hypot(
+        const dist = Math.hypot(
             player.x - seg.x * SCALE, 
             player.y - seg.y * SCALE
-        ) < 80 * SCALE) {
-            if(i === player.checkpoint) player.checkpoint++;
+        );
+        
+        if(dist < 120 * SCALE && i === player.checkpoint) {
+            player.checkpoint++;
         }
     });
     
     // Коллизии
     bots.forEach(bot => {
         if(checkCollision(player, bot)) {
-            const dx = player.x - bot.x;
-            const dy = player.y - bot.y;
-            const force = 0.8;
-            
-            player.velocity.x += dx * force;
-            player.velocity.y += dy * force;
-            bot.velocity.x -= dx * force;
-            bot.velocity.y -= dy * force;
+            const force = 0.5;
+            player.x += (player.x - bot.x) * force;
+            player.y += (player.y - bot.y) * force;
         }
     });
     
     requestAnimationFrame(gameLoop);
 }
 
-// Новое управление с разделением поворота и ускорения
+// Управление с инерцией
 document.addEventListener('keydown', e => {
-    const turnSpeed = 4;
-    const acceleration = 0.15;
-    
-    if(e.key === 'ArrowLeft') {
-        player.angle -= turnSpeed;
+    switch(e.key) {
+        case 'ArrowLeft':
+            player.steering -= 2;
+            break;
+        case 'ArrowRight':
+            player.steering += 2;
+            break;
+        case 'ArrowUp':
+            player.speed = Math.min(player.maxSpeed, player.speed + 0.3);
+            break;
+        case 'ArrowDown':
+            player.speed = Math.max(-3, player.speed - 0.5);
+            break;
     }
-    if(e.key === 'ArrowRight') {
-        player.angle += turnSpeed;
-    }
-    if(e.key === 'ArrowUp') {
-        player.velocity.x += Math.cos((player.angle - 90) * Math.PI / 180) * acceleration;
-        player.velocity.y += Math.sin((player.angle - 90) * Math.PI / 180) * acceleration;
-    }
-    if(e.key === 'ArrowDown') {
-        player.velocity.x -= Math.cos((player.angle - 90) * Math.PI / 180) * acceleration * 0.5;
-        player.velocity.y -= Math.sin((player.angle - 90) * Math.PI / 180) * acceleration * 0.5;
-    }
-    
-    // Ограничение скорости
-    const speed = Math.hypot(player.velocity.x, player.velocity.y);
-    if(speed > player.maxSpeed) {
-        player.velocity.x = (player.velocity.x / speed) * player.maxSpeed;
-        player.velocity.y = (player.velocity.y / speed) * player.maxSpeed;
-    }
-});
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth * SCALE;
-    canvas.height = window.innerHeight * SCALE;
 });
 
 init();

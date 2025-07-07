@@ -1,168 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Heck.ai Racing</title>
+    <title>Dust Racing 2D</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #222;
-        }
-        #gameCanvas {
-            background: #333;
-        }
+        body { margin: 0; overflow: hidden; background: #2c3e50; }
+        canvas { background: #27ae60; }
         #hud {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-family: Arial;
+            position: fixed; top: 10px; left: 10px;
+            color: white; font-family: Arial; font-size: 20px;
         }
     </style>
 </head>
-<>
-    <div id="hud">Круг: <span id="lap">1</span>/2 | Скорость: <span id="speed">0</span> км/ч</div>
-    <canvas id="gameCanvas"></canvas>
+<body>
+    <div id="hud">Laps: <span id="laps">0</span>/2</div>
+    <canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
 
-// Настройка размеров
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const TRACK = [
+    {x: 200, y: 900, w: 400}, {x: 200, y: 700, w: 400}, 
+    {x: 400, y: 500, w: 400, r: 45}, {x: 600, y: 300, w: 400, r: 90},
+    {x: 600, y: 100, w: 400}, {x: 400, y: -100, w: 400, r: -45}
+];
 
-// Игровые константы
-const ROAD_WIDTH = 400;
-const PLAYER_SPEED = 8;
-const MAX_BOT_SPEED = 6;
-const FINISH_LINE_Y = 100;
-const LAPS_NEEDED = 2;
+class Car {
+    constructor(color) {
+        this.x = 400;
+        this.y = 900;
+        this.speed = 0;
+        this.angle = 0;
+        this.color = color;
+        this.laps = 0;
+        this.checkpoint = 0;
+    }
 
-// Состояние игры
-let gameState = {
-    player: {
-        x: canvas.width/2,
-        y: canvas.height - 150,
-        speed: 0,
-        maxSpeed: 12,
-        rotation: 0
-    },
-    bots: [],
-    roadOffset: 0,
-    lap: 1,
-    finished: false
-};
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle * Math.PI / 180);
+        
+        // Кузов
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-20, -10, 40, 20);
+        
+        // Кабина
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-15, -8, 30, 10);
+        
+        // Колёса
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(-25, -15, 10, 10);
+        ctx.fillRect(15, -15, 10, 10);
+        ctx.fillRect(-25, 5, 10, 10);
+        ctx.fillRect(15, 5, 10, 10);
+        
+        ctx.restore();
+    }
 
-// Инициализация ботов
-function initBots() {
-    for(let i = 0; i < 5; i++) {
-        gameState.bots.push({
-            x: Math.random() * (ROAD_WIDTH - 60) + (canvas.width/2 - ROAD_WIDTH/2 + 30),
-            y: -i * 200,
-            speed: MAX_BOT_SPEED * Math.random(),
-            lane: Math.floor(Math.random() * 3)
-        });
+    update() {
+        this.x += Math.cos(this.angle * Math.PI / 180) * this.speed;
+        this.y += Math.sin(this.angle * Math.PI / 180) * this.speed;
+        this.speed *= 0.96;
     }
 }
 
-// Рисуем машину
-function drawCar(x, y, color, rotation = 0) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-    
-    // Кузов
-    ctx.fillStyle = color;
-    ctx.fillRect(-15, -25, 30, 50);
-    
-    // Окна
-    ctx.fillStyle = '#87CEEB';
-    ctx.fillRect(-12, -22, 24, 20);
-    
-    // Колеса
-    ctx.fillStyle = '#333';
-    ctx.beginPath();
- ctx.arc(-12, 20, 8, 0, Math.PI*2);
-    ctx.arc(12, 20, 8, 0, Math.PI*2);
-    ctx.arc(-12, -20, 8, 0, Math.PI*2);
-    ctx.arc(12, -20, 8, 0, Math.PI*2);
-    ctx.fill();
-    
-    ctx.restore();
-}
+const player = new Car('#e74c3c');
+const bots = Array.from({length: 5}, (_, i) => 
+    new Car(['#3498db', '#9b59b6', '#2ecc71', '#f1c40f', '#95a5a6'][i]));
 
-// Основной цикл игры
-function gameLoop() {
-    if(gameState.finished) return;
-
-    // Очистка экрана
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Рисуем дорогу
-    ctx.fillStyle = '#555';
-    ctx.fillRect(canvas.width/2 - ROAD_WIDTH/2, 0, ROAD_WIDTH, canvas.height);
-    
-    // Рисуем разделительные линии
-    ctx.strokeStyle = '#fff';
-    ctx.setLineDash([40, 30]);
-    ctx.beginPath();
- ctx.moveTo(canvas.width/2, gameState.roadOffset % 70);
-    ctx.lineTo(canvas.width/2, canvas.height);
-    ctx.stroke();
-
-    // Обновление ботов
-    gameState.bots.forEach(bot => {
-        bot.y += bot.speed;
-        if(bot.y > canvas.height) {
-            bot.y = -100;
-            bot.lane = Math.floor(Math.random() * 3);
-        }
-        bot.x = canvas.width/2 - ROAD_WIDTH/2 + 60 + bot.lane*140;
-        drawCar(bot.x, bot.y, '#FF4444');
+function init() {
+    bots.forEach((bot, i) => {
+        bot.x = 300 + i * 80;
+        bot.y = 800 - i * 100;
+        bot.speed = 3 + Math.random() * 2;
     });
+}
 
-    // Рисуем игрока
-    drawCar(gameState.player.x, gameState.player.y, '#44CCFF', gameState.player.rotation);
+function drawTrack() {
+    TRACK.forEach(segment => {
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(segment.x - segment.w/2, segment.y, segment.w, 200);
+    });
+}
 
-    // Финишная линия
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(canvas.width/2 - ROAD_WIDTH/2, FINISH_LINE_Y, ROAD_WIDTH, 5);
+function aiMove(bot) {
+    const target = TRACK[bot.checkpoint % TRACK.length];
+    const dx = target.x - bot.x;
+    const dy = target.y - bot.y;
+    bot.angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    if(Math.hypot(dx, dy) < 50) bot.checkpoint++;
+    bot.speed = 3 + (Math.random() - 0.5);
+}
 
+function checkCollision(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y) < 30;
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, width, height);
+    
+    // Отрисовка трека
+    drawTrack();
+    
+    // Обновление ботов
+    bots.forEach(bot => {
+        aiMove(bot);
+        bot.update();
+        bot.draw();
+    });
+    
+    // Обновление игрока
+    player.update();
+    player.draw();
+    
     // Проверка кругов
-    if(gameState.player.y < FINISH_LINE_Y) {
-        gameState.lap++;
-        document.getElementById('lap').textContent = gameState.lap;
-        gameState.player.y = canvas.height - 100;
-        if(gameState.lap > LAPS_NEEDED) {
-            gameState.finished = true;
-            alert('Гонка зашена!');        }
+    if(player.y < 100 && player.checkpoint === TRACK.length) {
+        player.laps++;
+        document.getElementById('laps').textContent = player.laps;
+        player.checkpoint = 0;
+        if(player.laps >= 2) alert('Победа!');
     }
-
-    // Обновление HUD
-    document.getElementById('speed').textContent = Math.abs(Math.round(gameState.player.speed * 10));
-
+    
+    // Проверка чекпоинтов
+    TRACK.forEach((seg, i) => {
+        if(Math.hypot(player.x - seg.x, player.y - seg.y) < 50) {
+            player.checkpoint = Math.max(player.checkpoint, i);
+        }
+    });
+    
+    // Коллизии
+    bots.forEach(bot => {
+        if(checkCollision(player, bot)) {
+            player.speed *= 0.5;
+            bot.speed *= 0.5;
+        }
+    });
+    
     requestAnimationFrame(gameLoop);
 }
 
-// Управление
-document.addEventListener('keydown', (e) => {
-    if(e.key === 'ArrowLeft') {
-        gameState.player.x = Math.max(canvas.width/2 - ROAD_WIDTH/2 + 40, gameState.player.x - 15);
-        gameState.player.rotation = -0.1;
-    }
-    if(e.key === 'ArrowRight') {
-        gameState.player.x = Math.min(canvas.width/2 + ROAD_WIDTH/2 - 40, gameState.player.x + 15);
-        gameState.player.rotation = 0.1;
-    }
+document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft') player.angle -= 5;
+    if(e.key === 'ArrowRight') player.angle += 5;
+    player.speed = Math.min(8, player.speed + 0.2);
 });
 
-document.addEventListener('keyup', () => {
-    gameState.player.rotation = 0;
-});
-
-// Запуск игры
-initBots();
+init();
 gameLoop();
 </script>
 </body>

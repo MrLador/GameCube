@@ -1,13 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dust Racing 2D</title>
+    <title>Dust Racer</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #2c3e50; }
-        canvas { background: #27ae60; }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #2c3e50; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            background: #27ae60;
+            border: 2px solid #34495e;
+        }
         #hud {
-            position: fixed; top: 10px; left: 10px;
-            color: white; font-family: Arial; font-size: 20px;
+            position: fixed; 
+            top: 10px; 
+            left: 10px;
+            color: white; 
+            font-family: Arial; 
+            font-size: 20px;
         }
     </style>
 </head>
@@ -18,22 +33,30 @@
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-let width = canvas.width = window.innerWidth;
-let height = canvas.height = window.innerHeight;
+const SCALE = 0.8;
+canvas.width = 1000 * SCALE;
+canvas.height = 800 * SCALE;
 
 const TRACK = [
-    {x: 200, y: 900, w: 400}, {x: 200, y: 700, w: 400}, 
-    {x: 400, y: 500, w: 400, r: 45}, {x: 600, y: 300, w: 400, r: 90},
-    {x: 600, y: 100, w: 400}, {x: 400, y: -100, w: 400, r: -45}
+    {x: 500, y: 700, w: 300},    // Стартовая прямая
+    {x: 500, y: 500, w: 300, r: 30}, // Правый поворот
+    {x: 700, y: 300, w: 300, r: 90}, // Шпилька
+    {x: 500, y: 100, w: 300},    // Прямая
+    {x: 300, y: 300, w: 300, r: -90}, // Левый поворот
+    {x: 500, y: 500, w: 300, r: -30}  // Обратный поворот
 ];
 
 class Car {
     constructor(color) {
-        this.x = 400;
-        this.y = 900;
+        this.reset();
+        this.color = color;
+    }
+
+    reset() {
+        this.x = 500 * SCALE;
+        this.y = 700 * SCALE;
         this.speed = 0;
         this.angle = 0;
-        this.color = color;
         this.laps = 0;
         this.checkpoint = 0;
     }
@@ -45,25 +68,30 @@ class Car {
         
         // Кузов
         ctx.fillStyle = this.color;
-        ctx.fillRect(-20, -10, 40, 20);
+        ctx.beginPath();
+        ctx.roundRect(-20*SCALE, -10*SCALE, 40*SCALE, 20*SCALE, 5*SCALE);
+        ctx.fill();
         
         // Кабина
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(-15, -8, 30, 10);
+        ctx.fillStyle = '#ecf0f1';
+        ctx.beginPath();
+        ctx.roundRect(-15*SCALE, -8*SCALE, 30*SCALE, 10*SCALE, 3*SCALE);
+        ctx.fill();
         
         // Колёса
         ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(-25, -15, 10, 10);
-        ctx.fillRect(15, -15, 10, 10);
-        ctx.fillRect(-25, 5, 10, 10);
-        ctx.fillRect(15, 5, 10, 10);
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, y]) => {
+            ctx.beginPath();
+            ctx.arc(x * 25*SCALE, y * 15*SCALE, 5*SCALE, 0, Math.PI*2);
+            ctx.fill();
+        });
         
         ctx.restore();
     }
 
     update() {
-        this.x += Math.cos(this.angle * Math.PI / 180) * this.speed;
-        this.y += Math.sin(this.angle * Math.PI / 180) * this.speed;
+        this.x += Math.cos(this.angle * Math.PI / 180) * this.speed * SCALE;
+        this.y += Math.sin(this.angle * Math.PI / 180) * this.speed * SCALE;
         this.speed *= 0.96;
     }
 }
@@ -74,35 +102,45 @@ const bots = Array.from({length: 5}, (_, i) =>
 
 function init() {
     bots.forEach((bot, i) => {
-        bot.x = 300 + i * 80;
-        bot.y = 800 - i * 100;
+        bot.reset();
+        bot.x += (i - 2) * 40 * SCALE;
         bot.speed = 3 + Math.random() * 2;
     });
 }
 
 function drawTrack() {
+    ctx.fillStyle = '#7f8c8d';
     TRACK.forEach(segment => {
-        ctx.fillStyle = '#7f8c8d';
-        ctx.fillRect(segment.x - segment.w/2, segment.y, segment.w, 200);
+        ctx.beginPath();
+        ctx.roundRect(
+            (segment.x - segment.w/2) * SCALE, 
+            segment.y * SCALE, 
+            segment.w * SCALE, 
+            200 * SCALE, 
+            20 * SCALE
+        );
+        ctx.fill();
     });
 }
 
 function aiMove(bot) {
     const target = TRACK[bot.checkpoint % TRACK.length];
-    const dx = target.x - bot.x;
-    const dy = target.y - bot.y;
+    const dx = target.x * SCALE - bot.x;
+    const dy = target.y * SCALE - bot.y;
     bot.angle = Math.atan2(dy, dx) * 180 / Math.PI;
     
-    if(Math.hypot(dx, dy) < 50) bot.checkpoint++;
-    bot.speed = 3 + (Math.random() - 0.5);
+    if(Math.hypot(dx, dy) < 50 * SCALE) {
+        bot.checkpoint = (bot.checkpoint + 1) % TRACK.length;
+    }
+    bot.speed = Math.min(6, bot.speed + 0.1);
 }
 
 function checkCollision(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y) < 30;
+    return Math.hypot(a.x - b.x, a.y - b.y) < 30 * SCALE;
 }
 
 function gameLoop() {
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Отрисовка трека
     drawTrack();
@@ -119,25 +157,33 @@ function gameLoop() {
     player.draw();
     
     // Проверка кругов
-    if(player.y < 100 && player.checkpoint === TRACK.length) {
+    if(player.checkpoint >= TRACK.length) {
         player.laps++;
         document.getElementById('laps').textContent = player.laps;
         player.checkpoint = 0;
-        if(player.laps >= 2) alert('Победа!');
+        if(player.laps >= 2) {
+            alert('Победа!');
+            init();
+            player.reset();
+            return;
+        }
     }
     
     // Проверка чекпоинтов
     TRACK.forEach((seg, i) => {
-        if(Math.hypot(player.x - seg.x, player.y - seg.y) < 50) {
-            player.checkpoint = Math.max(player.checkpoint, i);
+        if(Math.hypot(
+            player.x - seg.x * SCALE, 
+            player.y - seg.y * SCALE
+        ) < 50 * SCALE) {
+            if(i === player.checkpoint) player.checkpoint++;
         }
     });
     
     // Коллизии
     bots.forEach(bot => {
         if(checkCollision(player, bot)) {
-            player.speed *= 0.5;
-            bot.speed *= 0.5;
+            player.speed *= 0.7;
+            bot.speed *= 0.7;
         }
     });
     
@@ -147,7 +193,13 @@ function gameLoop() {
 document.addEventListener('keydown', e => {
     if(e.key === 'ArrowLeft') player.angle -= 5;
     if(e.key === 'ArrowRight') player.angle += 5;
-    player.speed = Math.min(8, player.speed + 0.2);
+    player.speed = Math.min(8, player.speed + 0.3);
+});
+
+// Адаптивность
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth * SCALE;
+    canvas.height = window.innerHeight * SCALE;
 });
 
 init();

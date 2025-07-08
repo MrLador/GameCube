@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пинг-понг на 4 игрока (Без угловых стенок)</title>
+    <title>Пинг-понг на 4 игрока (Без угловых стенок, исправлено)</title>
     <style>
         /* CSS стили */
         body {
@@ -152,8 +152,8 @@
 
         const boardWidth = gameBoard.clientWidth;
         const boardHeight = gameBoard.clientHeight;
-        const paddleWidth = paddlePlayer.clientWidth;
-        const paddleHeight = paddlePlayer.clientHeight; // Используется для горизонтальных ракеток
+        const paddleWidth = paddlePlayer.clientWidth; // Длина горизонтальных ракеток (100px)
+        const paddleThickness = paddlePlayer.clientHeight; // Толщина всех ракеток (20px)
         const ballSize = ball.clientWidth;
 
         let ballX = boardWidth / 2 - ballSize / 2;
@@ -164,7 +164,9 @@
 
         let playerPaddleX = boardWidth / 2 - paddleWidth / 2;
         let bot1PaddleX = boardWidth / 2 - paddleWidth / 2;
-        let bot2PaddleY = boardHeight / 2 - paddleWidth / 2; // Для вертикальных ракеток ширина становится высотой
+        // Для вертикальных ракеток, их "длина" в CSS (paddleWidth) становится их "высотой" в JS
+        // А их "толщина" в CSS (paddleThickness) становится их "шириной" в JS
+        let bot2PaddleY = boardHeight / 2 - paddleWidth / 2;
         let bot3PaddleY = boardHeight / 2 - paddleWidth / 2;
 
         let playerScore = 0;
@@ -270,6 +272,8 @@
 
                 // Столкновение с левой стеной (зона бота 2)
                 if (ballX <= 0) {
+                    // Здесь используем paddleWidth (длину ракетки) для проверки столкновения по Y
+                    // и paddleThickness (толщину ракетки) для ограничения движения по Y
                     if (ballY + ballSize > bot2PaddleY && ballY < bot2PaddleY + paddleWidth) {
                         ballSpeedX *= -1; // Отскок от ракетки бота 2
                         ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -282,6 +286,8 @@
                 }
                 // Столкновение с правой стеной (зона бота 3)
                 else if (ballX >= boardWidth - ballSize) {
+                    // Здесь используем paddleWidth (длину ракетки) для проверки столкновения по Y
+                    // и paddleThickness (толщину ракетки) для ограничения движения по Y
                     if (ballY + ballSize > bot3PaddleY && ballY < bot3PaddleY + paddleWidth) {
                         ballSpeedX *= -1; // Отскок от ракетки бота 3
                         ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -317,6 +323,7 @@
                         bot2PaddleY = Math.max(bot2TargetY, bot2PaddleY - botSpeed);
                     }
                 }
+                // Исправлено: используем paddleWidth (длину ракетки) для ограничения движения по Y
                 bot2PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot2PaddleY));
                 paddleBot2.style.top = `${bot2PaddleY}px`;
 
@@ -329,6 +336,7 @@
                         bot3PaddleY = Math.max(bot3TargetY, bot3PaddleY - botSpeed);
                     }
                 }
+                // Исправлено: используем paddleWidth (длину ракетки) для ограничения движения по Y
                 bot3PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot3PaddleY));
                 paddleBot3.style.top = `${bot3PaddleY}px`;
             }

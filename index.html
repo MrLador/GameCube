@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пинг-понг на 4 игрока (Один файл)</title>
+    <title>Пинг-понг на 4 игрока (Без углов)</title>
     <style>
         /* CSS стили */
         body {
@@ -143,13 +143,14 @@
         const boardWidth = gameBoard.clientWidth;
         const boardHeight = gameBoard.clientHeight;
         const paddleWidth = paddlePlayer.clientWidth;
-        const paddleHeight = paddlePlayer.clientHeight;
+        const paddleHeight = paddlePlayer.clientHeight; // Используется для горизонтальных ракеток
         const ballSize = ball.clientWidth;
 
         let ballX = boardWidth / 2 - ballSize / 2;
         let ballY = boardHeight / 2 - ballSize / 2;
         let ballSpeedX = 5; // Скорость мяча по X
         let ballSpeedY = 5; // Скорость мяча по Y
+        const initialBallSpeed = 5; // Начальная скорость мяча
 
         let playerPaddleX = boardWidth / 2 - paddleWidth / 2;
         let bot1PaddleX = boardWidth / 2 - paddleWidth / 2;
@@ -174,12 +175,8 @@
             ballX = boardWidth / 2 - ballSize / 2;
             ballY = boardHeight / 2 - ballSize / 2;
             // Случайное направление после сброса
-            ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * 5;
-            ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * 5;
-            // Сброс скорости мяча до начальной
-            const initialSpeed = 5;
-            ballSpeedX = (ballSpeedX > 0 ? 1 : -1) * initialSpeed;
-            ballSpeedY = (ballSpeedY > 0 ? 1 : -1) * initialSpeed;
+            ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * initialBallSpeed;
+            ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * initialBallSpeed;
         }
 
         // Движение игрока (стрелки влево/вправо)
@@ -202,77 +199,81 @@
             ball.style.left = `${ballX}px`;
             ball.style.top = `${ballY}px`;
 
-            // Столкновение мяча с горизонтальными стенами (верх/низ)
-            if (ballY <= 0) { // Верхняя стена (зона бота 1)
-                // Проверяем столкновение с ракеткой бота 1
+            // --- Обнаружение столкновений и подсчет очков ---
+
+            // Столкновение с верхней стеной (зона бота 1)
+            if (ballY <= 0) {
+                // Проверяем, находится ли мяч над ракеткой бота 1
                 if (ballX + ballSize > bot1PaddleX && ballX < bot1PaddleX + paddleWidth) {
                     ballSpeedY *= -1; // Отскок от ракетки бота 1
-                    // Увеличиваем скорость мяча при отскоке
-                    ballSpeedX *= 1.05;
+                    ballSpeedX *= 1.05; // Увеличиваем скорость
                     ballSpeedY *= 1.05;
                 } else {
-                    // Мяч прошел мимо бота 1
-                    playerScore++; // Игрок получает очко
+                    // Мяч прошел мимо бота 1 - очко игроку
+                    playerScore++;
                     resetBall();
                 }
-            } else if (ballY >= boardHeight - ballSize) { // Нижняя стена (зона игрока)
-                // Проверяем столкновение с ракеткой игрока
+            }
+            // Столкновение с нижней стеной (зона игрока)
+            else if (ballY >= boardHeight - ballSize) {
+                // Проверяем, находится ли мяч над ракеткой игрока
                 if (ballX + ballSize > playerPaddleX && ballX < playerPaddleX + paddleWidth) {
                     ballSpeedY *= -1; // Отскок от ракетки игрока
-                    // Увеличиваем скорость мяча при отскоке
-                    ballSpeedX *= 1.05;
+                    ballSpeedX *= 1.05; // Увеличиваем скорость
                     ballSpeedY *= 1.05;
                 } else {
-                    // Мяч прошел мимо игрока
-                    bot1Score++; // Бот 1 получает очко
+                    // Мяч прошел мимо игрока - очко боту 1
+                    bot1Score++;
                     resetBall();
                 }
             }
 
-            // Столкновение мяча с вертикальными стенами (лево/право)
-            if (ballX <= 0) { // Левая стена (зона бота 2)
-                // Для вертикальных ракеток, Y-координата мяча должна быть в пределах ракетки
-                // paddleWidth здесь - это высота вертикальной ракетки
+            // Столкновение с левой стеной (зона бота 2)
+            if (ballX <= 0) {
+                // Проверяем, находится ли мяч напротив ракетки бота 2 (paddleWidth здесь - это высота вертикальной ракетки)
                 if (ballY + ballSize > bot2PaddleY && ballY < bot2PaddleY + paddleWidth) {
                     ballSpeedX *= -1; // Отскок от ракетки бота 2
-                    ballSpeedX *= 1.05;
+                    ballSpeedX *= 1.05; // Увеличиваем скорость
                     ballSpeedY *= 1.05;
                 } else {
-                    // Мяч прошел мимо бота 2
-                    bot3Score++; // Бот 3 получает очко
+                    // Мяч прошел мимо бота 2 - очко боту 3
+                    bot3Score++;
                     resetBall();
                 }
-            } else if (ballX >= boardWidth - ballSize) { // Правая стена (зона бота 3)
-                if (ballY + ballSize > bot3PaddleY && ballY < bot3PaddleY + paddleWidth) { // paddleWidth здесь - это высота вертикальной ракетки
+            }
+            // Столкновение с правой стеной (зона бота 3)
+            else if (ballX >= boardWidth - ballSize) {
+                // Проверяем, находится ли мяч напротив ракетки бота 3
+                if (ballY + ballSize > bot3PaddleY && ballY < bot3PaddleY + paddleWidth) {
                     ballSpeedX *= -1; // Отскок от ракетки бота 3
-                    ballSpeedX *= 1.05;
+                    ballSpeedX *= 1.05; // Увеличиваем скорость
                     ballSpeedY *= 1.05;
                 } else {
-                    // Мяч прошел мимо бота 3
-                    bot2Score++; // Бот 2 получает очко
+                    // Мяч прошел мимо бота 3 - очко боту 2
+                    bot2Score++;
                     resetBall();
                 }
             }
 
-            // Логика движения ботов (очень простая: следуют за мячом)
+            // --- Логика движения ботов ---
+            const botSpeed = 3; // Скорость движения ботов
+
             // Бот 1 (верхний, горизонтальный)
-            // Цель бота - чтобы центр его ракетки был напротив центра мяча
             const bot1TargetX = ballX + ballSize / 2 - paddleWidth / 2;
             if (bot1PaddleX < bot1TargetX) {
-                bot1PaddleX = Math.min(bot1TargetX, bot1PaddleX + 3); // Скорость бота
+                bot1PaddleX = Math.min(bot1TargetX, bot1PaddleX + botSpeed);
             } else if (bot1PaddleX > bot1TargetX) {
-                bot1PaddleX = Math.max(bot1TargetX, bot1PaddleX - 3);
+                bot1PaddleX = Math.max(bot1TargetX, bot1PaddleX - botSpeed);
             }
-            // Ограничиваем движение бота в пределах поля
             bot1PaddleX = Math.max(0, Math.min(boardWidth - paddleWidth, bot1PaddleX));
             paddleBot1.style.left = `${bot1PaddleX}px`;
 
             // Бот 2 (левый, вертикальный)
-            const bot2TargetY = ballY + ballSize / 2 - paddleWidth / 2; // paddleWidth здесь - это высота
+            const bot2TargetY = ballY + ballSize / 2 - paddleWidth / 2;
             if (bot2PaddleY < bot2TargetY) {
-                bot2PaddleY = Math.min(bot2TargetY, bot2PaddleY + 3);
+                bot2PaddleY = Math.min(bot2TargetY, bot2PaddleY + botSpeed);
             } else if (bot2PaddleY > bot2TargetY) {
-                bot2PaddleY = Math.max(bot2TargetY, bot2PaddleY - 3);
+                bot2PaddleY = Math.max(bot2TargetY, bot2PaddleY - botSpeed);
             }
             bot2PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot2PaddleY));
             paddleBot2.style.top = `${bot2PaddleY}px`;
@@ -280,9 +281,9 @@
             // Бот 3 (правый, вертикальный)
             const bot3TargetY = ballY + ballSize / 2 - paddleWidth / 2;
             if (bot3PaddleY < bot3TargetY) {
-                bot3PaddleY = Math.min(bot3TargetY, bot3PaddleY + 3);
+                bot3PaddleY = Math.min(bot3TargetY, bot3PaddleY + botSpeed);
             } else if (bot3PaddleY > bot3TargetY) {
-                bot3PaddleY = Math.max(bot3TargetY, bot3PaddleY - 3);
+                bot3PaddleY = Math.max(bot3TargetY, bot3PaddleY - botSpeed);
             }
             bot3PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot3PaddleY));
             paddleBot3.style.top = `${bot3PaddleY}px`;

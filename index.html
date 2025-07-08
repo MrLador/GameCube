@@ -1,254 +1,300 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Dust Racer Final</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пинг-понг на 4 игрока (Один файл)</title>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #2ecc71; 
+        /* CSS стили */
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #222;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden; /* Предотвращаем прокрутку */
         }
-        canvas {
-            background: #27ae60;
-            border: 2px solid #34495e;
+
+        #game-container {
+            position: relative;
+            width: 800px; /* Ширина игрового поля */
+            height: 800px; /* Высота игрового поля */
+            background-color: #000;
+            border: 5px solid #eee;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+            overflow: hidden; /* Важно для ракеток и мяча */
         }
-        #hud {
-            position: fixed; 
-            top: 10px; 
-            left: 10px;
-            color: white; 
-            font-family: Arial; 
-            font-size: 20px;
-            text-shadow: 2px 2px 2px black;
+
+        #game-board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .paddle {
+            position: absolute;
+            background-color: #00FFFF; /* Бирюзовый */
+            width: 100px; /* Длина ракетки */
+            height: 20px; /* Толщина ракетки */
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Расположение ракеток */
+        #paddle-player { /* Нижняя ракетка (игрок) */
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #paddle-bot1 { /* Верхняя ракетка (бот 1) */
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #paddle-bot2 { /* Левая ракетка (бот 2) */
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg); /* Поворот для вертикальной ракетки */
+        }
+
+        #paddle-bot3 { /* Правая ракетка (бот 3) */
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg); /* Поворот для вертикальной ракетки */
+        }
+
+        #ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #FFD700; /* Золотой */
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+
+        /* Стили для счета */
+        .score {
+            position: absolute;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .player-score {
+            bottom: 20px;
+            left: 20px;
+        }
+
+        .bot1-score {
+            top: 20px;
+            left: 20px;
+        }
+
+        .bot2-score {
+            top: 20px;
+            right: 20px;
+        }
+
+        .bot3-score {
+            bottom: 20px;
+            right: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="hud">Laps: <span id="laps">0</span>/2</div>
-    <canvas id="game"></canvas>
+    <div id="game-container">
+        <div id="game-board">
+            <!-- Ракетки -->
+            <div id="paddle-player" class="paddle player"></div>
+            <div id="paddle-bot1" class="paddle bot"></div>
+            <div id="paddle-bot2" class="paddle bot"></div>
+            <div id="paddle-bot3" class="paddle bot"></div>
 
-<script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const SCALE = 0.8;
-canvas.width = 1000 * SCALE;
-canvas.height = 800 * SCALE;
+            <!-- Мяч -->
+            <div id="ball"></div>
 
-// Полностью переработанный трек в форме восьмёрки
-const TRACK = [
-    {x: 500, y: 700, w: 300, type: 'straight'},  // Старт
-    {x: 700, y: 500, w: 300, r: 90},            // Правый поворот
-    {x: 500, y: 300, w: 300, type: 'straight'}, // Верхняя прямая
-    {x: 300, y: 500, w: 300, r: -90},           // Левый поворот
-    {x: 500, y: 700, w: 300, type: 'straight'}  // Финиш
-];
+            <!-- Счет -->
+            <div id="score-player" class="score player-score">Игрок: 0</div>
+            <div id="score-bot1" class="score bot1-score">Бот 1: 0</div>
+            <div id="score-bot2" class="score bot2-score">Бот 2: 0</div>
+            <div id="score-bot3" class="score bot3-score">Бот 3: 0</div>
+        </div>
+    </div>
 
-class Car {
-    constructor(color) {
-        this.reset();
-        this.color = color;
-        this.maxSpeed = 8;
-        this.steering = 0;
-    }
+    <script>
+        // JavaScript код
+        const gameBoard = document.getElementById('game-board');
+        const ball = document.getElementById('ball');
+        const paddlePlayer = document.getElementById('paddle-player');
+        const paddleBot1 = document.getElementById('paddle-bot1'); // Верхний бот
+        const paddleBot2 = document.getElementById('paddle-bot2'); // Левый бот
+        const paddleBot3 = document.getElementById('paddle-bot3'); // Правый бот
 
-    reset() {
-        this.x = 500 * SCALE;
-        this.y = 700 * SCALE;
-        this.speed = 0;
-        this.angle = 0; // 0 = вправо, 90 = вверх
-        this.laps = 0;
-        this.checkpoint = 0;
-        this.velocity = { x: 0, y: 0 };
-    }
+        const scorePlayer = document.getElementById('score-player');
+        const scoreBot1 = document.getElementById('score-bot1');
+        const scoreBot2 = document.getElementById('score-bot2');
+        const scoreBot3 = document.getElementById('score-bot3');
 
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate((this.angle + 90) * Math.PI / 180); // Исправленное вращение
-        
-        // Кузов с тенью
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 5;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.roundRect(-20*SCALE, -10*SCALE, 40*SCALE, 20*SCALE, 5*SCALE);
-        ctx.fill();
-        
-        // Стекло
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.beginPath();
-        ctx.roundRect(-15*SCALE, -8*SCALE, 30*SCALE, 10*SCALE, 3*SCALE);
-        ctx.fill();
-        
-        // Колёса с анимацией
-        ctx.fillStyle = '#2c3e50';
-        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, y]) => {
-            ctx.beginPath();
-            ctx.arc(x * 25*SCALE, y * 15*SCALE, 5*SCALE, 0, Math.PI*2);
-            ctx.fill();
+        const boardWidth = gameBoard.clientWidth;
+        const boardHeight = gameBoard.clientHeight;
+        const paddleWidth = paddlePlayer.clientWidth;
+        const paddleHeight = paddlePlayer.clientHeight;
+        const ballSize = ball.clientWidth;
+
+        let ballX = boardWidth / 2 - ballSize / 2;
+        let ballY = boardHeight / 2 - ballSize / 2;
+        let ballSpeedX = 5; // Скорость мяча по X
+        let ballSpeedY = 5; // Скорость мяча по Y
+
+        let playerPaddleX = boardWidth / 2 - paddleWidth / 2;
+        let bot1PaddleX = boardWidth / 2 - paddleWidth / 2;
+        let bot2PaddleY = boardHeight / 2 - paddleWidth / 2; // Для вертикальных ракеток ширина становится высотой
+        let bot3PaddleY = boardHeight / 2 - paddleWidth / 2;
+
+        let playerScore = 0;
+        let bot1Score = 0;
+        let bot2Score = 0;
+        let bot3Score = 0;
+
+        // Обновление счета на экране
+        function updateScores() {
+            scorePlayer.textContent = `Игрок: ${playerScore}`;
+            scoreBot1.textContent = `Бот 1: ${bot1Score}`;
+            scoreBot2.textContent = `Бот 2: ${bot2Score}`;
+            scoreBot3.textContent = `Бот 3: ${bot3Score}`;
+        }
+
+        // Инициализация позиции мяча и ракеток
+        function resetBall() {
+            ballX = boardWidth / 2 - ballSize / 2;
+            ballY = boardHeight / 2 - ballSize / 2;
+            // Случайное направление после сброса
+            ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * 5;
+            ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * 5;
+            // Сброс скорости мяча до начальной
+            const initialSpeed = 5;
+            ballSpeedX = (ballSpeedX > 0 ? 1 : -1) * initialSpeed;
+            ballSpeedY = (ballSpeedY > 0 ? 1 : -1) * initialSpeed;
+        }
+
+        // Движение игрока (стрелки влево/вправо)
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') {
+                playerPaddleX = Math.max(0, playerPaddleX - 15); // Скорость движения игрока
+            } else if (e.key === 'ArrowRight') {
+                playerPaddleX = Math.min(boardWidth - paddleWidth, playerPaddleX + 15);
+            }
+            paddlePlayer.style.left = `${playerPaddleX}px`;
         });
-        
-        ctx.restore();
-    }
 
-    update() {
-        // Плавное управление
-        this.angle += this.steering * (this.speed * 0.1);
-        this.velocity.x = Math.cos((this.angle) * Math.PI / 180) * this.speed;
-        this.velocity.y = Math.sin((this.angle) * Math.PI / 180) * this.speed;
-        
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
-        
-        // Естественное замедление
-        this.speed *= 0.97;
-        this.steering *= 0.9;
-    }
-}
+        // Основной игровой цикл
+        function gameLoop() {
+            // Движение мяча
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
 
-const player = new Car('#e74c3c');
-const bots = Array.from({length: 3}, (_, i) => 
-    new Car(['#3498db', '#9b59b6', '#2ecc71'][i]));
+            // Обновление позиции мяча
+            ball.style.left = `${ballX}px`;
+            ball.style.top = `${ballY}px`;
 
-function init() {
-    bots.forEach((bot, i) => {
-        bot.reset();
-        bot.x += (i - 1) * 80 * SCALE;
-        bot.y += 50 * SCALE;
-        bot.maxSpeed = 6 + Math.random() * 2;
-    });
-}
+            // Столкновение мяча с горизонтальными стенами (верх/низ)
+            if (ballY <= 0) { // Верхняя стена (зона бота 1)
+                // Проверяем столкновение с ракеткой бота 1
+                if (ballX + ballSize > bot1PaddleX && ballX < bot1PaddleX + paddleWidth) {
+                    ballSpeedY *= -1; // Отскок от ракетки бота 1
+                    // Увеличиваем скорость мяча при отскоке
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                } else {
+                    // Мяч прошел мимо бота 1
+                    playerScore++; // Игрок получает очко
+                    resetBall();
+                }
+            } else if (ballY >= boardHeight - ballSize) { // Нижняя стена (зона игрока)
+                // Проверяем столкновение с ракеткой игрока
+                if (ballX + ballSize > playerPaddleX && ballX < playerPaddleX + paddleWidth) {
+                    ballSpeedY *= -1; // Отскок от ракетки игрока
+                    // Увеличиваем скорость мяча при отскоке
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                } else {
+                    // Мяч прошел мимо игрока
+                    bot1Score++; // Бот 1 получает очко
+                    resetBall();
+                }
+            }
 
-function drawTrackSegment(segment) {
-    ctx.fillStyle = '#7f8c8d';
-    ctx.strokeStyle = '#34495e';
-    ctx.lineWidth = 5*SCALE;
-    
-    if(segment.r) {
-        // Рисуем поворот
-        ctx.beginPath();
-        ctx.arc(
-            segment.x * SCALE, 
-            segment.y * SCALE, 
-            segment.w * SCALE, 
-            Math.PI*0.5, 
-            Math.PI*1.5
-        );
-        ctx.fill();
-        ctx.stroke();
-    } else {
-        // Прямая
-        ctx.beginPath();
-        ctx.roundRect(
-            (segment.x - segment.w/2) * SCALE,
-            segment.y * SCALE - 100*SCALE,
-            segment.w * SCALE,
-            200*SCALE,
-            20*SCALE
-        );
-        ctx.fill();
-        ctx.stroke();
-    }
-}
+            // Столкновение мяча с вертикальными стенами (лево/право)
+            if (ballX <= 0) { // Левая стена (зона бота 2)
+                // Для вертикальных ракеток, Y-координата мяча должна быть в пределах ракетки
+                // paddleWidth здесь - это высота вертикальной ракетки
+                if (ballY + ballSize > bot2PaddleY && ballY < bot2PaddleY + paddleWidth) {
+                    ballSpeedX *= -1; // Отскок от ракетки бота 2
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                } else {
+                    // Мяч прошел мимо бота 2
+                    bot3Score++; // Бот 3 получает очко
+                    resetBall();
+                }
+            } else if (ballX >= boardWidth - ballSize) { // Правая стена (зона бота 3)
+                if (ballY + ballSize > bot3PaddleY && ballY < bot3PaddleY + paddleWidth) { // paddleWidth здесь - это высота вертикальной ракетки
+                    ballSpeedX *= -1; // Отскок от ракетки бота 3
+                    ballSpeedX *= 1.05;
+                    ballSpeedY *= 1.05;
+                } else {
+                    // Мяч прошел мимо бота 3
+                    bot2Score++; // Бот 2 получает очко
+                    resetBall();
+                }
+            }
 
-function aiMove(bot) {
-    const target = TRACK[bot.checkpoint % TRACK.length];
-    const dx = target.x * SCALE - bot.x;
-    const dy = target.y * SCALE - bot.y;
-    
-    const targetAngle = (Math.atan2(dy, dx) * 180 / Math.PI) - 90;
-    const angleDiff = ((targetAngle - bot.angle + 180) % 360) - 180;
-    
-    bot.steering = Math.max(-3, Math.min(3, angleDiff * 0.1));
-    bot.speed = Math.min(bot.maxSpeed, bot.speed + 0.05);
-    
-    if(Math.hypot(dx, dy) < 100 * SCALE) {
-        bot.checkpoint = (bot.checkpoint + 1) % TRACK.length;
-    }
-}
+            // Логика движения ботов (очень простая: следуют за мячом)
+            // Бот 1 (верхний, горизонтальный)
+            // Цель бота - чтобы центр его ракетки был напротив центра мяча
+            const bot1TargetX = ballX + ballSize / 2 - paddleWidth / 2;
+            if (bot1PaddleX < bot1TargetX) {
+                bot1PaddleX = Math.min(bot1TargetX, bot1PaddleX + 3); // Скорость бота
+            } else if (bot1PaddleX > bot1TargetX) {
+                bot1PaddleX = Math.max(bot1TargetX, bot1PaddleX - 3);
+            }
+            // Ограничиваем движение бота в пределах поля
+            bot1PaddleX = Math.max(0, Math.min(boardWidth - paddleWidth, bot1PaddleX));
+            paddleBot1.style.left = `${bot1PaddleX}px`;
 
-function checkCollision(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y) < 40 * SCALE;
-}
+            // Бот 2 (левый, вертикальный)
+            const bot2TargetY = ballY + ballSize / 2 - paddleWidth / 2; // paddleWidth здесь - это высота
+            if (bot2PaddleY < bot2TargetY) {
+                bot2PaddleY = Math.min(bot2TargetY, bot2PaddleY + 3);
+            } else if (bot2PaddleY > bot2TargetY) {
+                bot2PaddleY = Math.max(bot2TargetY, bot2PaddleY - 3);
+            }
+            bot2PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot2PaddleY));
+            paddleBot2.style.top = `${bot2PaddleY}px`;
 
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Рисуем трек
-    TRACK.forEach(drawTrackSegment);
-    
-    // Обновляем ботов
-    bots.forEach(bot => {
-        aiMove(bot);
-        bot.update();
-        bot.draw();
-    });
-    
-    // Обновляем игрока
-    player.update();
-    player.draw();
-    
-    // Проверка кругов
-    if(player.checkpoint >= TRACK.length) {
-        player.laps++;
-        document.getElementById('laps').textContent = player.laps;
-        player.checkpoint = 0;
-        if(player.laps >= 2) {
-            alert('Победа!');
-            init();
-            player.reset();
-            return;
+            // Бот 3 (правый, вертикальный)
+            const bot3TargetY = ballY + ballSize / 2 - paddleWidth / 2;
+            if (bot3PaddleY < bot3TargetY) {
+                bot3PaddleY = Math.min(bot3TargetY, bot3PaddleY + 3);
+            } else if (bot3PaddleY > bot3TargetY) {
+                bot3PaddleY = Math.max(bot3TargetY, bot3PaddleY - 3);
+            }
+            bot3PaddleY = Math.max(0, Math.min(boardHeight - paddleWidth, bot3PaddleY));
+            paddleBot3.style.top = `${bot3PaddleY}px`;
+
+            updateScores();
+            requestAnimationFrame(gameLoop); // Запускаем следующий кадр анимации
         }
-    }
-    
-    // Проверка чекпоинтов
-    TRACK.forEach((seg, i) => {
-        const dist = Math.hypot(
-            player.x - seg.x * SCALE, 
-            player.y - seg.y * SCALE
-        );
-        
-        if(dist < 120 * SCALE && i === player.checkpoint) {
-            player.checkpoint++;
-        }
-    });
-    
-    // Коллизии
-    bots.forEach(bot => {
-        if(checkCollision(player, bot)) {
-            const force = 0.5;
-            player.x += (player.x - bot.x) * force;
-            player.y += (player.y - bot.y) * force;
-        }
-    });
-    
-    requestAnimationFrame(gameLoop);
-}
 
-// Управление с инерцией
-document.addEventListener('keydown', e => {
-    switch(e.key) {
-        case 'ArrowLeft':
-            player.steering -= 2;
-            break;
-        case 'ArrowRight':
-            player.steering += 2;
-            break;
-        case 'ArrowUp':
-            player.speed = Math.min(player.maxSpeed, player.speed + 0.3);
-            break;
-        case 'ArrowDown':
-            player.speed = Math.max(-3, player.speed - 0.5);
-            break;
-    }
-});
-
-init();
-gameLoop();
-</script>
+        // Запуск игры
+        resetBall(); // Устанавливаем мяч в начальную позицию
+        updateScores(); // Обновляем счет
+        gameLoop(); // Запускаем игровой цикл
+    </script>
 </body>
 </html>

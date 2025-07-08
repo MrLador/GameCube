@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пинг-понг на 4 игрока (Без углов)</title>
+    <title>Пинг-понг на 4 игрока (8-гранное поле)</title>
     <style>
         /* CSS стили */
         body {
@@ -25,6 +25,15 @@
             border: 5px solid #eee;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
             overflow: hidden; /* Важно для ракеток и мяча */
+
+            /* Создаем 8-гранную форму с помощью clip-path */
+            /* Полигон, который обрезает углы */
+            clip-path: polygon(
+                20% 0%, 80% 0%, /* Верхняя сторона */
+                100% 20%, 100% 80%, /* Правая сторона */
+                80% 100%, 20% 100%, /* Нижняя сторона */
+                0% 80%, 0% 20% /* Левая сторона */
+            );
         }
 
         #game-board {
@@ -83,6 +92,7 @@
             font-size: 24px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10; /* Чтобы счет был поверх обрезанных углов */
         }
 
         .player-score {
@@ -148,14 +158,14 @@
 
         let ballX = boardWidth / 2 - ballSize / 2;
         let ballY = boardHeight / 2 - ballSize / 2;
-        let ballSpeedX = 5; // Скорость мяча по X
-        let ballSpeedY = 5; // Скорость мяча по Y
+        let ballSpeedX = 0; // Изначально 0, чтобы мяч не двигался до resetBall
+        let ballSpeedY = 0; // Изначально 0, чтобы мяч не двигался до resetBall
         const initialBallSpeed = 5; // Начальная скорость мяча
 
         let playerPaddleX = boardWidth / 2 - paddleWidth / 2;
         let bot1PaddleX = boardWidth / 2 - paddleWidth / 2;
         let bot2PaddleY = boardHeight / 2 - paddleWidth / 2; // Для вертикальных ракеток ширина становится высотой
-        let bot3PaddleY = boardHeight / 2 - paddleWidth / 2;
+        let bot3PaddleY = boardH
 
         let playerScore = 0;
         let bot1Score = 0;
@@ -170,13 +180,28 @@
             scoreBot3.textContent = `Бот 3: ${bot3Score}`;
         }
 
-        // Инициализация позиции мяча и ракеток
+        // Инициализация позиции мяча и случайный запуск в любую из 8 сторон
         function resetBall() {
             ballX = boardWidth / 2 - ballSize / 2;
             ballY = boardHeight / 2 - ballSize / 2;
-            // Случайное направление после сброса
-            ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * initialBallSpeed;
-            ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * initialBallSpeed;
+
+            // Случайный выбор одного из 8 направлений
+            const directions = [
+                { x: 1, y: 0 },   // Вправо
+                { x: -1, y: 0 },  // Влево
+                { x: 0, y: 1 },   // Вниз
+                { x: 0, y: -1 },  // Вверх
+                { x: 1, y: 1 },   // Вправо-вниз (диагональ)
+                { x: -1, y: 1 },  // Влево-вниз (диагональ)
+                { x: 1, y: -1 },  // Вправо-вверх (диагональ)
+                { x: -1, y: -1}   // Влево-вверх (диагональ)
+            ];
+            const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+
+            // Нормализуем диагональные скорости, чтобы мяч двигался с одинаковой скоростью
+            const magnitude = Math.sqrt(randomDirection.x * randomDirection.x + randomDirection.y * randomDirection.y);
+            ballSpeedX = (randomDirection.x / magnitude) * initialBallSpeed;
+            ballSpeedY = (randomDirection.y / magnitude) * initialBallSpeed;
         }
 
         // Движение игрока (стрелки влево/вправо)
@@ -203,7 +228,6 @@
 
             // Столкновение с верхней стеной (зона бота 1)
             if (ballY <= 0) {
-                // Проверяем, находится ли мяч над ракеткой бота 1
                 if (ballX + ballSize > bot1PaddleX && ballX < bot1PaddleX + paddleWidth) {
                     ballSpeedY *= -1; // Отскок от ракетки бота 1
                     ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -216,7 +240,6 @@
             }
             // Столкновение с нижней стеной (зона игрока)
             else if (ballY >= boardHeight - ballSize) {
-                // Проверяем, находится ли мяч над ракеткой игрока
                 if (ballX + ballSize > playerPaddleX && ballX < playerPaddleX + paddleWidth) {
                     ballSpeedY *= -1; // Отскок от ракетки игрока
                     ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -230,7 +253,6 @@
 
             // Столкновение с левой стеной (зона бота 2)
             if (ballX <= 0) {
-                // Проверяем, находится ли мяч напротив ракетки бота 2 (paddleWidth здесь - это высота вертикальной ракетки)
                 if (ballY + ballSize > bot2PaddleY && ballY < bot2PaddleY + paddleWidth) {
                     ballSpeedX *= -1; // Отскок от ракетки бота 2
                     ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -243,7 +265,6 @@
             }
             // Столкновение с правой стеной (зона бота 3)
             else if (ballX >= boardWidth - ballSize) {
-                // Проверяем, находится ли мяч напротив ракетки бота 3
                 if (ballY + ballSize > bot3PaddleY && ballY < bot3PaddleY + paddleWidth) {
                     ballSpeedX *= -1; // Отскок от ракетки бота 3
                     ballSpeedX *= 1.05; // Увеличиваем скорость
@@ -293,7 +314,7 @@
         }
 
         // Запуск игры
-        resetBall(); // Устанавливаем мяч в начальную позицию
+        resetBall(); // Устанавливаем мяч в начальную позицию и запускаем
         updateScores(); // Обновляем счет
         gameLoop(); // Запускаем игровой цикл
     </script>

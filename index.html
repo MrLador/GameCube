@@ -97,6 +97,16 @@
     color: #bbb;
     user-select: none;
   }
+  
+  /* Control info */
+  .control-info {
+    margin-top: 1em;
+    padding: 0.5em;
+    background: #1e1e1e;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 900px;
+  }
 </style>
 </head>
 <body>
@@ -120,6 +130,7 @@
 <div id="timer" aria-label="Таймер">Время: 02:00</div>
 <div id="message" role="alert" aria-live="assertive"></div>
 <div id="mobileControlsHint"></div>
+<div id="controlInfo" class="control-info"></div>
 
 <script>
 (() => {
@@ -131,6 +142,7 @@
   const timerEl = document.getElementById('timer');
   const messageEl = document.getElementById('message');
   const mobileHintEl = document.getElementById('mobileControlsHint');
+  const controlInfoEl = document.getElementById('controlInfo');
 
   const btnPvBot = document.getElementById('btnPvBot');
   const btnPvP = document.getElementById('btnPvP');
@@ -359,14 +371,15 @@
 
   // Handle paddle movement based on input
   function handlePaddleMovement() {
-    // Player 1 controls: W/S or touch left side
-    if (keysPressed['KeyW'] || keysPressed['ArrowUp']) {
+    // Player 1 controls: W/S
+    if (keysPressed['KeyW']) {
       paddle1Y -= PADDLE_SPEED;
     }
-    if (keysPressed['KeyS'] || keysPressed['ArrowDown']) {
+    if (keysPressed['KeyS']) {
       paddle1Y += PADDLE_SPEED;
     }
-    // Player 2 controls: Up/Down arrows or touch right side (in PvP)
+    
+    // Player 2 controls: Up/Down arrows (only in PvP mode)
     if (mode === 'pvp') {
       if (keysPressed['ArrowUp']) {
         paddle2Y -= PADDLE_SPEED;
@@ -419,6 +432,13 @@
     modeSelectDiv.style.display = 'none';
     messageEl.textContent = '';
     lastTime = 0;
+    
+    // Update control info based on mode
+    if (mode === 'bot') {
+      controlInfoEl.textContent = 'Управление: Игрок 1 — W/S, Бот — управляется автоматически';
+    } else {
+      controlInfoEl.textContent = 'Управление: Игрок 1 — W/S, Игрок 2 — стрелки вверх/вниз';
+    }
   }
 
   // Detect if device is mobile
@@ -429,6 +449,10 @@
   // Setup keyboard controls
   function setupKeyboard() {
     window.addEventListener('keydown', e => {
+      // Prevent default behavior for game control keys
+      if (['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+        e.preventDefault();
+      }
       keysPressed[e.code] = true;
     });
     window.addEventListener('keyup', e => {
@@ -446,9 +470,6 @@
     container.addEventListener('touchmove', handleTouch);
     container.addEventListener('touchend', handleTouchEnd);
     container.addEventListener('touchcancel', handleTouchEnd);
-
-    // Track active touches for paddles
-    let activeTouches = {};
 
     function handleTouch(e) {
       e.preventDefault();
@@ -523,11 +544,14 @@
       setupTouchControls();
       mobileHintEl.textContent = 'Управление: тапайте по левой/правой стороне экрана сверху или снизу для управления ракетками.';
     } else {
-      mobileHintEl.textContent = 'Управление: Игрок 1 — W/S, Игрок 2 — стрелки вверх/вниз.';
+      mobileHintEl.textContent = '';
     }
 
     btnPvBot.addEventListener('click', () => startGame('bot'));
     btnPvP.addEventListener('click', () => startGame('pvp'));
+
+    // Initial control info
+    controlInfoEl.textContent = 'Выберите режим игры';
 
     draw(); // initial draw
     requestAnimationFrame(gameLoop);

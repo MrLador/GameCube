@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Awesome Motorcycle Ping Pong</title>
+<title>Ping-Pong</title>
 <style>
-  /* Reset */
   * {
     box-sizing: border-box;
   }
@@ -19,31 +18,39 @@
     align-items: center;
     justify-content: center;
     user-select: none;
+    overflow: hidden;
   }
   h1 {
     margin-bottom: 0.2em;
     font-weight: 700;
     letter-spacing: 0.05em;
+    font-size: 2.5rem;
+    color: #f0a500;
+    text-shadow: 0 0 10px rgba(240, 165, 0, 0.5);
   }
   #modeSelect {
     margin-bottom: 1em;
+    display: flex;
+    gap: 15px;
   }
   button {
     background: none;
-    border: 2px solid #eee;
+    border: 2px solid #f0a500;
     color: #eee;
-    padding: 0.5em 1.5em;
+    padding: 0.7em 1.8em;
     margin: 0 0.5em;
     font-weight: 600;
     font-size: 1.1em;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
+    transition: all 0.3s;
   }
   button:hover, button:focus {
-    background-color: #eee;
+    background-color: #f0a500;
     color: #121212;
     outline: none;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(240, 165, 0, 0.7);
   }
   #gameContainer {
     position: relative;
@@ -51,10 +58,11 @@
     max-width: 900px;
     aspect-ratio: 16 / 9;
     background: #1e1e1e;
-    border: 3px solid #eee;
+    border: 3px solid #f0a500;
     border-radius: 12px;
     overflow: hidden;
     touch-action: none;
+    box-shadow: 0 0 20px rgba(240, 165, 0, 0.4);
   }
   canvas {
     display: block;
@@ -62,56 +70,72 @@
     height: 100%;
   }
   #scoreboard {
-    margin-top: 0.8em;
-    font-size: 1.3em;
+    margin-top: 20px;
+    font-size: 2.5em;
     font-weight: 700;
     letter-spacing: 0.1em;
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
+    align-items: center;
     width: 90vw;
     max-width: 900px;
+    gap: 30px;
+    background: rgba(30, 30, 30, 0.8);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid #f0a500;
+  }
+  .score-divider {
+    color: #f0a500;
+    font-weight: bold;
   }
   #timer {
-    font-size: 1.2em;
+    font-size: 1.5em;
     font-weight: 600;
-    margin-top: 0.5em;
+    margin-top: 0.8em;
+    color: #eee;
   }
   #message {
     margin-top: 1em;
     font-size: 1.4em;
     font-weight: 700;
     color: #f0a500;
+    text-align: center;
+    min-height: 2em;
   }
-
-  /* Line art style for paddles and ball */
-  .line-art {
-    stroke: #eee;
-    stroke-width: 3;
-    fill: none;
+  .control-info {
+    margin-top: 1.2em;
+    padding: 0.8em;
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 8px;
+    text-align: center;
+    max-width: 900px;
+    border: 1px solid #f0a500;
+    font-size: 1.1em;
   }
-
-  /* Controls hint for mobile */
   #mobileControlsHint {
     margin-top: 0.8em;
     font-size: 0.9em;
     color: #bbb;
     user-select: none;
+    text-align: center;
   }
   
-  /* Control info */
-  .control-info {
-    margin-top: 1em;
-    padding: 0.5em;
-    background: #1e1e1e;
-    border-radius: 8px;
-    text-align: center;
-    max-width: 900px;
+  /* Анимации */
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  .pulse {
+    animation: pulse 0.5s ease-in-out;
   }
 </style>
 </head>
 <body>
 
-<h1>Awesome Motorcycle Ping Pong</h1>
+<h1>Ping-Pong</h1>
 
 <div id="modeSelect">
   <button id="btnPvBot">Игрок vs Бот</button>
@@ -123,14 +147,15 @@
 </div>
 
 <div id="scoreboard" aria-label="Табло счета">
-  <div>Игрок 1: <span id="score1">0</span></div>
-  <div>Игрок 2: <span id="score2">0</span></div>
+  <div id="score1">0</div>
+  <div class="score-divider">:</div>
+  <div id="score2">0</div>
 </div>
 
 <div id="timer" aria-label="Таймер">Время: 02:00</div>
 <div id="message" role="alert" aria-live="assertive"></div>
+<div id="controlInfo" class="control-info">Выберите режим игры</div>
 <div id="mobileControlsHint"></div>
-<div id="controlInfo" class="control-info"></div>
 
 <script>
 (() => {
@@ -149,25 +174,27 @@
   const modeSelectDiv = document.getElementById('modeSelect');
 
   // Game constants
-  const PADDLE_WIDTH_RATIO = 0.02; // relative to canvas width
-  const PADDLE_HEIGHT_RATIO = 0.18; // relative to canvas height
-  const BALL_RADIUS_RATIO = 0.015; // relative to canvas width
-  const PADDLE_SPEED = 7; // pixels per frame approx
-  const BALL_SPEED_BASE = 6; // base speed of ball
+  const PADDLE_WIDTH_RATIO = 0.02;
+  const PADDLE_HEIGHT_RATIO = 0.18;
+  const BALL_RADIUS_RATIO = 0.015;
+  const PADDLE_SPEED = 420; // pixels per second
+  const BALL_SPEED_BASE = 360; // pixels per second
   const GAME_DURATION = 120; // seconds
 
-  // Colors inspired by motorcycle line art style
+  // Colors
   const COLOR_BG = '#1e1e1e';
   const COLOR_LINE = '#eee';
-  const COLOR_ACCENT = '#f0a500'; // warm yellow-orange accent
+  const COLOR_ACCENT = '#f0a500';
 
   // Game state
-  let mode = null; // 'bot' or 'pvp'
+  let mode = null;
   let scores = [0, 0];
   let timer = GAME_DURATION;
   let gameRunning = false;
+  let lastTime = 0;
+  let accumulator = 0;
 
-  // Paddle positions (y coordinate of top)
+  // Paddle positions
   let paddle1Y, paddle2Y;
   let paddleWidth, paddleHeight, ballRadius;
 
@@ -178,9 +205,6 @@
   // Input state
   let keysPressed = {};
   let isMobile = false;
-
-  // For mobile touch control
-  let touchZones = [];
 
   // Initialize sizes based on canvas size
   function initSizes() {
@@ -205,8 +229,7 @@
   function resetBall() {
     ballX = canvas.width / 2;
     ballY = canvas.height / 2;
-    // Randomize initial direction, ballSpeedX positive means to right
-    let angle = (Math.random() * Math.PI / 4) - Math.PI / 8; // -22.5 to +22.5 degrees
+    let angle = (Math.random() * Math.PI / 4) - Math.PI / 8;
     let direction = Math.random() < 0.5 ? 1 : -1;
     ballSpeedX = direction * BALL_SPEED_BASE * Math.cos(angle);
     ballSpeedY = BALL_SPEED_BASE * Math.sin(angle);
@@ -216,6 +239,14 @@
   function updateScoreboard() {
     score1El.textContent = scores[0];
     score2El.textContent = scores[1];
+    
+    // Add animation when score updates
+    score1El.classList.remove('pulse');
+    score2El.classList.remove('pulse');
+    setTimeout(() => {
+      if (scores[0] > parseInt(score1El.textContent)) score1El.classList.add('pulse');
+      if (scores[1] > parseInt(score2El.textContent)) score2El.classList.add('pulse');
+    }, 10);
   }
 
   // Update timer UI
@@ -223,6 +254,13 @@
     let minutes = Math.floor(timer / 60);
     let seconds = timer % 60;
     timerEl.textContent = `Время: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+    
+    // Change color when time is running out
+    if (timer <= 10) {
+      timerEl.style.color = '#ff4757';
+    } else {
+      timerEl.style.color = '#eee';
+    }
   }
 
   // Draw line art style paddles and ball
@@ -231,7 +269,6 @@
     ctx.lineWidth = 3;
     ctx.fillStyle = 'transparent';
     ctx.beginPath();
-    // Rounded rectangle paddle with line art style
     const radius = paddleWidth / 2;
     ctx.moveTo(x + radius, y);
     ctx.lineTo(x + paddleWidth - radius, y);
@@ -252,6 +289,12 @@
     ctx.beginPath();
     ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
     ctx.stroke();
+    
+    // Add glow effect
+    ctx.shadowColor = COLOR_ACCENT;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
   }
 
   // Draw center dashed line
@@ -278,25 +321,21 @@
     drawBall(ballX, ballY);
   }
 
-  // Game loop variables
-  let lastTime = 0;
-  let accumulator = 0;
-
-  // Game loop
+  // Game loop with delta time for consistent speed on all devices
   function gameLoop(timestamp) {
     if (!lastTime) lastTime = timestamp;
-    const delta = (timestamp - lastTime) / 1000;
+    const deltaTime = (timestamp - lastTime) / 1000; // in seconds
     lastTime = timestamp;
 
     if (gameRunning) {
-      update(delta);
+      update(deltaTime);
       draw();
     }
 
     requestAnimationFrame(gameLoop);
   }
 
-  // Update game state
+  // Update game state with delta time
   function update(delta) {
     // Update timer
     accumulator += delta;
@@ -310,12 +349,12 @@
       }
     }
 
-    // Move paddles based on input
-    handlePaddleMovement();
+    // Move paddles based on input with delta time
+    handlePaddleMovement(delta);
 
-    // Move ball
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
+    // Move ball with delta time
+    ballX += ballSpeedX * delta;
+    ballY += ballSpeedY * delta;
 
     // Ball collision with top/bottom
     if (ballY - ballRadius <= 0) {
@@ -332,12 +371,10 @@
     if (ballX - ballRadius <= 10 + paddleWidth) {
       if (ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
         ballX = 10 + paddleWidth + ballRadius;
-        ballSpeedX = -ballSpeedX * 1.05; // speed up a bit
-        // Add spin based on where it hit the paddle
+        ballSpeedX = -ballSpeedX * 1.05;
         let hitPos = (ballY - paddle1Y) / paddleHeight - 0.5;
         ballSpeedY += hitPos * 5;
       } else if (ballX - ballRadius < 0) {
-        // Score for player 2
         scores[1]++;
         updateScoreboard();
         resetBall();
@@ -351,15 +388,14 @@
         let hitPos = (ballY - paddle2Y) / paddleHeight - 0.5;
         ballSpeedY += hitPos * 5;
       } else if (ballX + ballRadius > canvas.width) {
-        // Score for player 1
         scores[0]++;
         updateScoreboard();
         resetBall();
       }
     }
 
-    // Clamp ball speed to avoid it going too fast
-    const maxSpeed = 15;
+    // Clamp ball speed
+    const maxSpeed = 900; // pixels per second
     ballSpeedX = Math.max(Math.min(ballSpeedX, maxSpeed), -maxSpeed);
     ballSpeedY = Math.max(Math.min(ballSpeedY, maxSpeed), -maxSpeed);
 
@@ -369,23 +405,23 @@
     }
   }
 
-  // Handle paddle movement based on input
-  function handlePaddleMovement() {
+  // Handle paddle movement based on input with delta time
+  function handlePaddleMovement(delta) {
     // Player 1 controls: W/S
     if (keysPressed['KeyW']) {
-      paddle1Y -= PADDLE_SPEED;
+      paddle1Y -= PADDLE_SPEED * delta;
     }
     if (keysPressed['KeyS']) {
-      paddle1Y += PADDLE_SPEED;
+      paddle1Y += PADDLE_SPEED * delta;
     }
     
     // Player 2 controls: Up/Down arrows (only in PvP mode)
     if (mode === 'pvp') {
       if (keysPressed['ArrowUp']) {
-        paddle2Y -= PADDLE_SPEED;
+        paddle2Y -= PADDLE_SPEED * delta;
       }
       if (keysPressed['ArrowDown']) {
-        paddle2Y += PADDLE_SPEED;
+        paddle2Y += PADDLE_SPEED * delta;
       }
     }
 
@@ -401,9 +437,9 @@
     const botSpeed = PADDLE_SPEED * 0.9;
     if (Math.abs(diff) > 10) {
       if (diff > 0) {
-        paddle2Y += botSpeed;
+        paddle2Y += botSpeed * delta;
       } else {
-        paddle2Y -= botSpeed;
+        paddle2Y -= botSpeed * delta;
       }
     }
     paddle2Y = Math.min(Math.max(paddle2Y, 0), canvas.height - paddleHeight);
@@ -449,7 +485,6 @@
   // Setup keyboard controls
   function setupKeyboard() {
     window.addEventListener('keydown', e => {
-      // Prevent default behavior for game control keys
       if (['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
         e.preventDefault();
       }
@@ -462,8 +497,6 @@
 
   // Setup touch controls for mobile
   function setupTouchControls() {
-    // Define two vertical zones: left half for player 1, right half for player 2 (if PvP)
-    // Touch upper half of zone - move paddle up, lower half - move paddle down
     const container = document.getElementById('gameContainer');
 
     container.addEventListener('touchstart', handleTouch);
@@ -479,7 +512,6 @@
         const zone = x < container.clientWidth / 2 ? 'left' : 'right';
 
         if (mode === 'bot') {
-          // Only left side controls player 1 paddle
           if (zone === 'left') {
             if (y < container.clientHeight / 2) {
               keysPressed['KeyW'] = true;
@@ -490,7 +522,6 @@
             }
           }
         } else if (mode === 'pvp') {
-          // Left side controls player 1, right side controls player 2
           if (zone === 'left') {
             if (y < container.clientHeight / 2) {
               keysPressed['KeyW'] = true;
@@ -511,9 +542,9 @@
         }
       }
     }
+    
     function handleTouchEnd(e) {
       e.preventDefault();
-      // Stop all paddle movement on touch end
       keysPressed['KeyW'] = false;
       keysPressed['KeyS'] = false;
       keysPressed['ArrowUp'] = false;
@@ -550,10 +581,7 @@
     btnPvBot.addEventListener('click', () => startGame('bot'));
     btnPvP.addEventListener('click', () => startGame('pvp'));
 
-    // Initial control info
-    controlInfoEl.textContent = 'Выберите режим игры';
-
-    draw(); // initial draw
+    draw();
     requestAnimationFrame(gameLoop);
   }
 

@@ -26,6 +26,7 @@
     letter-spacing: 0.05em;
     font-size: 2.5rem;
     color: #eee;
+    text-align: center;
   }
   #modeSelect {
     margin-bottom: 1em;
@@ -133,33 +134,6 @@
     display: block;
   }
   
-  /* Mobile control buttons */
-  #mobileControls {
-    display: none;
-    margin-top: 15px;
-    width: 90vmin;
-    max-width: 400px;
-    justify-content: space-between;
-  }
-  
-  .mobile #mobileControls {
-    display: flex;
-  }
-  
-  .mobile-control-btn {
-    width: 70px;
-    height: 70px;
-    background: rgba(30, 30, 30, 0.7);
-    border: 2px solid #eee;
-    border-radius: 50%;
-    color: #eee;
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-  }
-  
   /* Orientation warning for mobile */
   #orientationWarning {
     display: none;
@@ -212,12 +186,7 @@
 <div id="timer" aria-label="Таймер">Время: 02:00</div>
 <div id="message" role="alert" aria-live="assertive"></div>
 <div id="controlInfo" class="control-info">Выберите режим игры</div>
-<div id="mobileControlsHint">Используйте кнопки для управления ракеткой</div>
-
-<div id="mobileControls">
-  <button class="mobile-control-btn" id="leftBtn">←</button>
-  <button class="mobile-control-btn" id="rightBtn">→</button>
-</div>
+<div id="mobileControlsHint">Касайтесь экрана слева и справа для управления ракеткой</div>
 
 <script>
 (() => {
@@ -230,8 +199,6 @@
   const messageEl = document.getElementById('message');
   const mobileHintEl = document.getElementById('mobileControlsHint');
   const controlInfoEl = document.getElementById('controlInfo');
-  const leftBtn = document.getElementById('leftBtn');
-  const rightBtn = document.getElementById('rightBtn');
 
   const btnPvBot = document.getElementById('btnPvBot');
   const btnPvP = document.getElementById('btnPvP');
@@ -240,15 +207,15 @@
   // Game constants
   const PADDLE_WIDTH_RATIO = 0.02;
   const PADDLE_HEIGHT_RATIO = 0.18;
-  const BALL_RADIUS_RATIO = 0.015;
-  const PADDLE_SPEED = 420; // pixels per second
-  const BALL_SPEED_BASE = 360; // pixels per second
-  const GAME_DURATION = 120; // seconds
+  const BALL_RADIUS_RATIO = 0.03; // Увеличен в 2 раза для ПК
+  const BALL_RADIUS_RATIO_MOBILE = 0.025; // Отдельное значение для мобильных
+  const PADDLE_SPEED = 420;
+  const BALL_SPEED_BASE = 360;
+  const GAME_DURATION = 120;
 
   // Colors (original scheme)
   const COLOR_BG = '#1e1e1e';
   const COLOR_LINE = '#eee';
-  const COLOR_ACCENT = '#eee';
 
   // Game state
   let mode = null;
@@ -272,19 +239,21 @@
   let keysPressed = {};
   let touchStartX = 0;
   let touchStartY = 0;
+  let touchActive = false;
 
   // Initialize sizes based on canvas size
   function initSizes() {
     if (isVertical) {
       // Vertical orientation for mobile
-      paddleWidth = canvas.width * PADDLE_HEIGHT_RATIO;
-      paddleHeight = canvas.height * PADDLE_WIDTH_RATIO;
+      paddleWidth = canvas.width * 0.3; // Широкая ракетка для мобильной версии
+      paddleHeight = canvas.height * 0.03; // Тонкая ракетка
+      ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO_MOBILE;
     } else {
       // Horizontal orientation for desktop
       paddleWidth = canvas.width * PADDLE_WIDTH_RATIO;
       paddleHeight = canvas.height * PADDLE_HEIGHT_RATIO;
+      ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO; // Увеличенный размер мяча
     }
-    ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO;
   }
 
   // Reset game state for new round
@@ -293,10 +262,10 @@
     timer = GAME_DURATION;
     
     if (isVertical) {
-      // Vertical layout - paddles at bottom and top
+      // Vertical layout - player at bottom, opponent at top
       paddle1X = (canvas.width - paddleWidth) / 2; // Player at bottom
       paddle1Y = canvas.height - paddleHeight - 10;
-      paddle2X = (canvas.width - paddleWidth) / 2; // Bot at top
+      paddle2X = (canvas.width - paddleWidth) / 2; // Opponent at top
       paddle2Y = 10;
     } else {
       // Horizontal layout - paddles at left and right
@@ -341,7 +310,6 @@
     let seconds = timer % 60;
     timerEl.textContent = `Время: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
     
-    // Change color when time is running out
     if (timer <= 10) {
       timerEl.style.color = '#ff4757';
     } else {
@@ -437,7 +405,7 @@
   // Game loop with delta time for consistent speed on all devices
   function gameLoop(timestamp) {
     if (!lastTime) lastTime = timestamp;
-    const deltaTime = (timestamp - lastTime) / 1000; // in seconds
+    const deltaTime = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
     if (gameRunning) {
@@ -483,13 +451,13 @@
 
       // Ball collision with paddles (top and bottom)
       // Bottom paddle (player)
-      if (ballY + ballRadius >= paddle1Y) {
+      if (ballY + ballRadius >= paddle1Y && ballY - ballRadius <= paddle1Y + paddleHeight) {
         if (ballX >= paddle1X && ballX <= paddle1X + paddleWidth) {
           ballY = paddle1Y - ballRadius;
           ballSpeedY = -ballSpeedY * 1.05;
           // Add spin based on where it hit the paddle
           let hitPos = (ballX - paddle1X) / paddleWidth - 0.5;
-          ballSpeedX += hitPos * 5;
+          ballSpeedX += hitPos * 8;
         } else if (ballY + ballRadius > canvas.height) {
           // Score for opponent
           scores[1]++;
@@ -498,12 +466,12 @@
         }
       }
       // Top paddle (opponent)
-      if (ballY - ballRadius <= paddle2Y + paddleHeight) {
+      if (ballY - ballRadius <= paddle2Y + paddleHeight && ballY + ballRadius >= paddle2Y) {
         if (ballX >= paddle2X && ballX <= paddle2X + paddleWidth) {
           ballY = paddle2Y + paddleHeight + ballRadius;
           ballSpeedY = -ballSpeedY * 1.05;
           let hitPos = (ballX - paddle2X) / paddleWidth - 0.5;
-          ballSpeedX += hitPos * 5;
+          ballSpeedX += hitPos * 8;
         } else if (ballY - ballRadius < 0) {
           // Score for player
           scores[0]++;
@@ -556,7 +524,7 @@
     }
 
     // Clamp ball speed
-    const maxSpeed = 900; // pixels per second
+    const maxSpeed = 900;
     ballSpeedX = Math.max(Math.min(ballSpeedX, maxSpeed), -maxSpeed);
     ballSpeedY = Math.max(Math.min(ballSpeedY, maxSpeed), -maxSpeed);
 
@@ -569,11 +537,11 @@
   // Handle paddle movement based on input with delta time
   function handlePaddleMovement(delta) {
     if (isVertical) {
-      // Vertical mode - horizontal movement for bottom paddle
-      if (keysPressed['ArrowLeft'] || keysPressed['KeyA'] || keysPressed['leftBtn']) {
+      // Vertical mode - horizontal movement for bottom paddle (player)
+      if (keysPressed['ArrowLeft'] || keysPressed['KeyA']) {
         paddle1X -= PADDLE_SPEED * delta;
       }
-      if (keysPressed['ArrowRight'] || keysPressed['KeyD'] || keysPressed['rightBtn']) {
+      if (keysPressed['ArrowRight'] || keysPressed['KeyD']) {
         paddle1X += PADDLE_SPEED * delta;
       }
       
@@ -666,7 +634,7 @@
     
     // Update control info based on mode and orientation
     if (isVertical) {
-      controlInfoEl.textContent = 'Управление: используйте кнопки влево/вправо';
+      controlInfoEl.textContent = 'Касайтесь левой/правой части экрана для управления';
     } else {
       if (mode === 'bot') {
         controlInfoEl.textContent = 'Управление: Игрок 1 — W/S, Бот — управляется автоматически';
@@ -696,56 +664,45 @@
 
   // Setup mobile controls
   function setupMobileControls() {
-    // Button controls
-    leftBtn.addEventListener('touchstart', () => {
-      keysPressed['leftBtn'] = true;
-    });
-    leftBtn.addEventListener('touchend', () => {
-      keysPressed['leftBtn'] = false;
-    });
-    leftBtn.addEventListener('touchcancel', () => {
-      keysPressed['leftBtn'] = false;
-    });
-    
-    rightBtn.addEventListener('touchstart', () => {
-      keysPressed['rightBtn'] = true;
-    });
-    rightBtn.addEventListener('touchend', () => {
-      keysPressed['rightBtn'] = false;
-    });
-    rightBtn.addEventListener('touchcancel', () => {
-      keysPressed['rightBtn'] = false;
-    });
-    
-    // Swipe controls
     const container = document.getElementById('gameContainer');
+    
     container.addEventListener('touchstart', e => {
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
+      e.preventDefault();
+      touchActive = true;
+      const touchX = e.touches[0].clientX;
+      handleTouchInput(touchX);
     });
     
     container.addEventListener('touchmove', e => {
-      if (!isVertical) return;
-      
       e.preventDefault();
+      if (!touchActive) return;
       const touchX = e.touches[0].clientX;
-      const diffX = touchX - touchStartX;
-      
-      if (Math.abs(diffX) > 10) {
-        if (diffX > 0) {
-          keysPressed['rightBtn'] = true;
-          keysPressed['leftBtn'] = false;
-        } else {
-          keysPressed['leftBtn'] = true;
-          keysPressed['rightBtn'] = false;
-        }
-      }
+      handleTouchInput(touchX);
     });
     
     container.addEventListener('touchend', () => {
-      keysPressed['leftBtn'] = false;
-      keysPressed['rightBtn'] = false;
+      touchActive = false;
     });
+    
+    container.addEventListener('touchcancel', () => {
+      touchActive = false;
+    });
+  }
+  
+  // Handle touch input for mobile
+  function handleTouchInput(touchX) {
+    if (!isVertical) return;
+    
+    const container = document.getElementById('gameContainer');
+    const rect = container.getBoundingClientRect();
+    const relativeX = touchX - rect.left;
+    const containerWidth = rect.width;
+    
+    // Move paddle to touch position
+    paddle1X = relativeX - paddleWidth / 2;
+    
+    // Clamp paddle inside canvas
+    paddle1X = Math.min(Math.max(paddle1X, 0), canvas.width - paddleWidth);
   }
 
   // Resize canvas to fit container and keep aspect ratio
@@ -755,15 +712,21 @@
     canvas.width = rect.width;
     canvas.height = rect.height;
     initSizes();
+    
+    // Reset game if it's running
+    if (gameRunning) {
+      resetGame();
+    }
   }
 
   // Initialize everything
   function init() {
     isMobile = detectMobile();
-    isVertical = isMobile; // Use vertical layout on mobile
+    isVertical = isMobile;
     
     if (isMobile) {
       document.body.classList.add('mobile');
+      mobileHintEl.textContent = 'Касайтесь левой/правой части экрана для управления ракеткой';
     }
     
     resizeCanvas();
@@ -775,14 +738,12 @@
 
     if (isMobile) {
       setupMobileControls();
-      mobileHintEl.textContent = 'Используйте кнопки или свайпы для управления ракеткой';
-    } else {
-      mobileHintEl.textContent = '';
     }
 
     btnPvBot.addEventListener('click', () => startGame('bot'));
     btnPvP.addEventListener('click', () => startGame('pvp'));
 
+    // Initial draw
     draw();
     requestAnimationFrame(gameLoop);
   }

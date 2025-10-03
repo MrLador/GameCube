@@ -61,11 +61,11 @@
     outline: none;
   }
   
-  /* Game container - увеличен для ПК */
+  /* Game container - значительно увеличен для ПК */
   #gameWrapper {
     position: relative;
     width: 95%;
-    max-width: 1600px; /* Увеличено в 2 раза */
+    max-width: 1800px; /* Увеличено еще больше */
     margin: 0 auto;
   }
   
@@ -84,7 +84,7 @@
   #gameContainer::before {
     content: '';
     display: block;
-    padding-top: 56.25%; /* 16:9 aspect ratio */
+    padding-top: 50%; /* Более квадратное соотношение для большего поля */
   }
   
   /* Mobile version */
@@ -112,9 +112,6 @@
     width: 100%;
     height: 100%;
     display: block;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
   }
   
   #scoreboard {
@@ -126,7 +123,7 @@
     justify-content: center;
     align-items: center;
     width: 95%;
-    max-width: 1600px; /* Увеличено в 2 раза */
+    max-width: 1800px; /* Увеличено еще больше */
     gap: 20px;
   }
   .score-divider {
@@ -155,7 +152,7 @@
     border-radius: 8px;
     text-align: center;
     width: 95%;
-    max-width: 1600px; /* Увеличено в 2 раза */
+    max-width: 1800px; /* Увеличено еще больше */
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
   }
@@ -397,61 +394,30 @@ window.addEventListener('load', function() {
       }
     }
 
-    // Draw line art style paddles and ball with improved clarity
+    // Draw original style paddles (simple rectangles)
     function drawPaddle(x, y, isVertical) {
-      // Улучшаем четкость линий
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 4; // Увеличиваем толщину линии для лучшей видимости
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3;
       ctx.fillStyle = 'transparent';
-      ctx.beginPath();
       
-      if (isVertical) {
-        // Horizontal paddle for vertical mode
-        const radius = paddleHeight / 2;
-        ctx.moveTo(x, y + radius);
-        ctx.lineTo(x, y + paddleHeight - radius);
-        ctx.quadraticCurveTo(x, y + paddleHeight, x + radius, y + paddleHeight);
-        ctx.lineTo(x + paddleWidth - radius, y + paddleHeight);
-        ctx.quadraticCurveTo(x + paddleWidth, y + paddleHeight, x + paddleWidth, y + paddleHeight - radius);
-        ctx.lineTo(x + paddleWidth, y + radius);
-        ctx.quadraticCurveTo(x + paddleWidth, y, x + paddleWidth - radius, y);
-        ctx.lineTo(x + radius, y);
-        ctx.quadraticCurveTo(x, y, x, y + radius);
-      } else {
-        // Vertical paddle for horizontal mode
-        const radius = paddleWidth / 2;
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + paddleWidth - radius, y);
-        ctx.quadraticCurveTo(x + paddleWidth, y, x + paddleWidth, y + radius);
-        ctx.lineTo(x + paddleWidth, y + paddleHeight - radius);
-        ctx.quadraticCurveTo(x + paddleWidth, y + paddleHeight, x + paddleWidth - radius, y + paddleHeight);
-        ctx.lineTo(x + radius, y + paddleHeight);
-        ctx.quadraticCurveTo(x, y + paddleHeight, x, y + paddleHeight - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-      }
-      
-      ctx.stroke();
+      // Простые прямоугольники без закруглений (оригинальный дизайн)
+      ctx.strokeRect(x, y, paddleWidth, paddleHeight);
     }
 
     function drawBall(x, y) {
-      // Улучшаем четкость мяча
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 4; // Увеличиваем толщину линии
+      ctx.lineWidth = 3;
       ctx.fillStyle = 'transparent';
       ctx.beginPath();
       ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // Draw center dashed line with improved clarity
+    // Draw center dashed line
     function drawCenterLine() {
-      // Улучшаем четкость центральной линии
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 3; // Увеличиваем толщину линии
-      ctx.setLineDash([20, 20]); // Увеличиваем длину штрихов для лучшей видимости
+      ctx.lineWidth = 2;
+      ctx.setLineDash([15, 15]);
       ctx.beginPath();
       
       if (isVertical) {
@@ -468,7 +434,6 @@ window.addEventListener('load', function() {
 
     // Draw the entire frame
     function draw() {
-      // Очищаем canvas с улучшенной четкостью
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = COLOR_BG;
       ctx.fillRect(0, 0, canvas.width, canvas.height);

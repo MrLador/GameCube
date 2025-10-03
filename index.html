@@ -61,11 +61,11 @@
     outline: none;
   }
   
-  /* Game container */
+  /* Game container - увеличен для ПК */
   #gameWrapper {
     position: relative;
     width: 95%;
-    max-width: 1200px; /* Увеличено для ПК */
+    max-width: 1600px; /* Увеличено в 2 раза */
     margin: 0 auto;
   }
   
@@ -87,11 +87,11 @@
     padding-top: 56.25%; /* 16:9 aspect ratio */
   }
   
-  /* Mobile version - полностью вертикальная */
+  /* Mobile version */
   .mobile #gameWrapper {
     width: 95%;
     max-width: 400px;
-    height: 80vh; /* Увеличена высота */
+    height: 80vh;
     max-height: 700px;
   }
   
@@ -102,7 +102,7 @@
   }
   
   .mobile #gameContainer::before {
-    display: none; /* Убираем псевдоэлемент для мобильной версии */
+    display: none;
   }
   
   canvas {
@@ -112,6 +112,9 @@
     width: 100%;
     height: 100%;
     display: block;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
   }
   
   #scoreboard {
@@ -123,7 +126,7 @@
     justify-content: center;
     align-items: center;
     width: 95%;
-    max-width: 1200px; /* Увеличено для ПК */
+    max-width: 1600px; /* Увеличено в 2 раза */
     gap: 20px;
   }
   .score-divider {
@@ -152,7 +155,7 @@
     border-radius: 8px;
     text-align: center;
     width: 95%;
-    max-width: 1200px; /* Увеличено для ПК */
+    max-width: 1600px; /* Увеличено в 2 раза */
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
   }
@@ -285,8 +288,8 @@ window.addEventListener('load', function() {
     // Game constants
     const PADDLE_WIDTH_RATIO = 0.02;
     const PADDLE_HEIGHT_RATIO = 0.18;
-    const BALL_RADIUS_RATIO = 0.03; // Увеличен в 2 раза для ПК
-    const BALL_RADIUS_RATIO_MOBILE = 0.025; // Отдельное значение для мобильных
+    const BALL_RADIUS_RATIO = 0.03;
+    const BALL_RADIUS_RATIO_MOBILE = 0.025;
     const PADDLE_SPEED = 420;
     const BALL_SPEED_BASE = 360;
     const GAME_DURATION = 120;
@@ -321,16 +324,15 @@ window.addEventListener('load', function() {
     // Initialize sizes based on canvas size
     function initSizes() {
       if (isVertical) {
-        // Vertical orientation for mobile - ворота сверху и снизу
-        // Уменьшаем размер ракеток в 1.5 раза (0.3 / 1.5 = 0.2)
-        paddleWidth = canvas.width * 0.2; // Уменьшенная ракетка для мобильной версии
-        paddleHeight = canvas.height * 0.03; // Тонкая ракетка
+        // Vertical orientation for mobile
+        paddleWidth = canvas.width * 0.2; // Уменьшенная ракетка
+        paddleHeight = canvas.height * 0.03;
         ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO_MOBILE;
       } else {
         // Horizontal orientation for desktop
         paddleWidth = canvas.width * PADDLE_WIDTH_RATIO;
         paddleHeight = canvas.height * PADDLE_HEIGHT_RATIO;
-        ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO; // Увеличенный размер мяча
+        ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO;
       }
     }
 
@@ -341,14 +343,14 @@ window.addEventListener('load', function() {
       
       if (isVertical) {
         // Vertical layout - player at bottom, opponent at top
-        paddle1X = (canvas.width - paddleWidth) / 2; // Player at bottom
+        paddle1X = (canvas.width - paddleWidth) / 2;
         paddle1Y = canvas.height - paddleHeight - 10;
-        paddle2X = (canvas.width - paddleWidth) / 2; // Opponent at top
+        paddle2X = (canvas.width - paddleWidth) / 2;
         paddle2Y = 10;
       } else {
         // Horizontal layout - paddles at left and right
-        paddle1Y = (canvas.height - paddleHeight) / 2; // Left paddle
-        paddle2Y = (canvas.height - paddleHeight) / 2; // Right paddle
+        paddle1Y = (canvas.height - paddleHeight) / 2;
+        paddle2Y = (canvas.height - paddleHeight) / 2;
       }
       
       resetBall();
@@ -395,10 +397,13 @@ window.addEventListener('load', function() {
       }
     }
 
-    // Draw line art style paddles and ball
+    // Draw line art style paddles and ball with improved clarity
     function drawPaddle(x, y, isVertical) {
+      // Улучшаем четкость линий
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4; // Увеличиваем толщину линии для лучшей видимости
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.fillStyle = 'transparent';
       ctx.beginPath();
       
@@ -432,19 +437,21 @@ window.addEventListener('load', function() {
     }
 
     function drawBall(x, y) {
+      // Улучшаем четкость мяча
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4; // Увеличиваем толщину линии
       ctx.fillStyle = 'transparent';
       ctx.beginPath();
       ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // Draw center dashed line
+    // Draw center dashed line with improved clarity
     function drawCenterLine() {
+      // Улучшаем четкость центральной линии
       ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([15, 15]);
+      ctx.lineWidth = 3; // Увеличиваем толщину линии
+      ctx.setLineDash([20, 20]); // Увеличиваем длину штрихов для лучшей видимости
       ctx.beginPath();
       
       if (isVertical) {
@@ -461,6 +468,7 @@ window.addEventListener('load', function() {
 
     // Draw the entire frame
     function draw() {
+      // Очищаем canvas с улучшенной четкостью
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = COLOR_BG;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -469,12 +477,12 @@ window.addEventListener('load', function() {
       
       if (isVertical) {
         // Draw horizontal paddles for vertical mode
-        drawPaddle(paddle1X, paddle1Y, true); // Player at bottom
-        drawPaddle(paddle2X, paddle2Y, true); // Opponent at top
+        drawPaddle(paddle1X, paddle1Y, true);
+        drawPaddle(paddle2X, paddle2Y, true);
       } else {
         // Draw vertical paddles for horizontal mode
-        drawPaddle(10, paddle1Y, false); // Left paddle
-        drawPaddle(canvas.width - 10 - paddleWidth, paddle2Y, false); // Right paddle
+        drawPaddle(10, paddle1Y, false);
+        drawPaddle(canvas.width - 10 - paddleWidth, paddle2Y, false);
       }
       
       drawBall(ballX, ballY);
@@ -840,4 +848,4 @@ window.addEventListener('load', function() {
 });
 </script>
 </body>
-</html> 
+</html>

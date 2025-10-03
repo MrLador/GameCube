@@ -61,11 +61,11 @@
     outline: none;
   }
   
-  /* Game container - значительно увеличен для ПК */
+  /* Game container - увеличен на 1.5 раза */
   #gameWrapper {
     position: relative;
     width: 95%;
-    max-width: 1800px; /* Увеличено еще больше */
+    max-width: 2700px; /* Увеличено в 1.5 раза (1800 * 1.5) */
     margin: 0 auto;
   }
   
@@ -84,7 +84,7 @@
   #gameContainer::before {
     content: '';
     display: block;
-    padding-top: 50%; /* Более квадратное соотношение для большего поля */
+    padding-top: 50%; /* Сохраняем квадратное соотношение */
   }
   
   /* Mobile version */
@@ -123,7 +123,7 @@
     justify-content: center;
     align-items: center;
     width: 95%;
-    max-width: 1800px; /* Увеличено еще больше */
+    max-width: 2700px; /* Увеличено в 1.5 раза */
     gap: 20px;
   }
   .score-divider {
@@ -152,7 +152,7 @@
     border-radius: 8px;
     text-align: center;
     width: 95%;
-    max-width: 1800px; /* Увеличено еще больше */
+    max-width: 2700px; /* Увеличено в 1.5 раза */
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
   }
@@ -291,9 +291,10 @@ window.addEventListener('load', function() {
     const BALL_SPEED_BASE = 360;
     const GAME_DURATION = 120;
 
-    // Colors (original scheme)
+    // Colors
     const COLOR_BG = '#1e1e1e';
     const COLOR_LINE = '#eee';
+    const COLOR_PADDLE = '#eee';
 
     // Game state
     let mode = null;
@@ -394,14 +395,41 @@ window.addEventListener('load', function() {
       }
     }
 
-    // Draw original style paddles (simple rectangles)
+    // Draw new paddle design with rounded corners and fill
     function drawPaddle(x, y, isVertical) {
-      ctx.strokeStyle = COLOR_LINE;
-      ctx.lineWidth = 3;
-      ctx.fillStyle = 'transparent';
+      ctx.fillStyle = COLOR_PADDLE;
       
-      // Простые прямоугольники без закруглений (оригинальный дизайн)
-      ctx.strokeRect(x, y, paddleWidth, paddleHeight);
+      if (isVertical) {
+        // Horizontal paddle for vertical mode with rounded corners
+        const radius = Math.min(paddleWidth, paddleHeight) / 4;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + paddleWidth - radius, y);
+        ctx.quadraticCurveTo(x + paddleWidth, y, x + paddleWidth, y + radius);
+        ctx.lineTo(x + paddleWidth, y + paddleHeight - radius);
+        ctx.quadraticCurveTo(x + paddleWidth, y + paddleHeight, x + paddleWidth - radius, y + paddleHeight);
+        ctx.lineTo(x + radius, y + paddleHeight);
+        ctx.quadraticCurveTo(x, y + paddleHeight, x, y + paddleHeight - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Vertical paddle for horizontal mode with rounded corners
+        const radius = Math.min(paddleWidth, paddleHeight) / 4;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + paddleWidth - radius, y);
+        ctx.quadraticCurveTo(x + paddleWidth, y, x + paddleWidth, y + radius);
+        ctx.lineTo(x + paddleWidth, y + paddleHeight - radius);
+        ctx.quadraticCurveTo(x + paddleWidth, y + paddleHeight, x + paddleWidth - radius, y + paddleHeight);
+        ctx.lineTo(x + radius, y + paddleHeight);
+        ctx.quadraticCurveTo(x, y + paddleHeight, x, y + paddleHeight - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
 
     function drawBall(x, y) {

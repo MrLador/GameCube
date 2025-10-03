@@ -560,6 +560,11 @@ window.addEventListener('load', function() {
       // Update paddle velocities for physics
       updatePaddleVelocities(delta);
 
+      // Bot AI - вызываем ДО движения мяча
+      if (mode === 'bot') {
+        botMove(delta);
+      }
+
       // Move ball with delta time
       ballX += ballSpeedX * delta;
       ballY += ballSpeedY * delta;
@@ -607,7 +612,7 @@ window.addEventListener('load', function() {
           return;
         }
         
-        // Top paddle (opponent)
+        // Top paddle (opponent/bot)
         if (ballY - ballRadius <= paddle2Y + paddleHeight && ballY + ballRadius >= paddle2Y) {
           if (ballX >= paddle2X && ballX <= paddle2X + paddleWidth) {
             ballY = paddle2Y + paddleHeight + ballRadius;
@@ -674,7 +679,7 @@ window.addEventListener('load', function() {
             resetBall();
           }
         }
-        // Right paddle
+        // Right paddle (bot)
         if (ballX + ballRadius >= canvas.width - 10 - paddleWidth) {
           if (ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
             ballX = canvas.width - 10 - paddleWidth - ballRadius;
@@ -760,37 +765,48 @@ window.addEventListener('load', function() {
       }
     }
 
-    // Simple bot AI
+    // Improved bot AI
     function botMove(delta) {
       if (isVertical) {
-        // Vertical mode - bot controls top paddle
+        // Vertical mode - bot controls top paddle (горизонтальное движение)
         const centerPaddle = paddle2X + paddleWidth / 2;
         const diff = ballX - centerPaddle;
         const botSpeed = PADDLE_SPEED * 0.9;
         
-        if (Math.abs(diff) > 10) {
-          if (diff > 0) {
+        // Добавляем предсказание движения мяча
+        const predictionX = ballX + ballSpeedX * 0.5;
+        const predictiveDiff = predictionX - centerPaddle;
+        
+        if (Math.abs(predictiveDiff) > 15) {
+          if (predictiveDiff > 0) {
             paddle2X += botSpeed * delta;
           } else {
             paddle2X -= botSpeed * delta;
           }
         }
         
+        // Ограничиваем движение ракетки бота
         paddle2X = Math.min(Math.max(paddle2X, 0), canvas.width - paddleWidth);
       } else {
-        // Horizontal mode - bot controls right paddle
+        // Horizontal mode - bot controls right paddle (вертикальное движение)
         const centerPaddle = paddle2Y + paddleHeight / 2;
-        const diff = ballY - centerPaddle;
+        
+        // Предсказываем позицию мяча с учетом его скорости
+        const predictionY = ballY + ballSpeedY * 0.5;
+        const predictiveDiff = predictionY - centerPaddle;
+        
         const botSpeed = PADDLE_SPEED * 0.9;
         
-        if (Math.abs(diff) > 10) {
-          if (diff > 0) {
+        // Бот двигается к предсказанной позиции мяча
+        if (Math.abs(predictiveDiff) > 15) {
+          if (predictiveDiff > 0) {
             paddle2Y += botSpeed * delta;
           } else {
             paddle2Y -= botSpeed * delta;
           }
         }
         
+        // Ограничиваем движение ракетки бота
         paddle2Y = Math.min(Math.max(paddle2Y, 0), canvas.height - paddleHeight);
       }
     }

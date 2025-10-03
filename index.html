@@ -65,7 +65,7 @@
   #gameWrapper {
     position: relative;
     width: 95%;
-    max-width: 800px;
+    max-width: 1200px; /* Увеличено для ПК */
     margin: 0 auto;
   }
   
@@ -91,8 +91,8 @@
   .mobile #gameWrapper {
     width: 95%;
     max-width: 400px;
-    height: 70vh;
-    max-height: 600px;
+    height: 80vh; /* Увеличена высота */
+    max-height: 700px;
   }
   
   .mobile #gameContainer {
@@ -123,7 +123,7 @@
     justify-content: center;
     align-items: center;
     width: 95%;
-    max-width: 800px;
+    max-width: 1200px; /* Увеличено для ПК */
     gap: 20px;
   }
   .score-divider {
@@ -152,9 +152,14 @@
     border-radius: 8px;
     text-align: center;
     width: 95%;
-    max-width: 800px;
+    max-width: 1200px; /* Увеличено для ПК */
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
+  }
+  
+  /* Скрываем подсказку в мобильной версии */
+  .mobile .control-info {
+    display: none;
   }
   
   /* Orientation warning for mobile */
@@ -317,7 +322,8 @@ window.addEventListener('load', function() {
     function initSizes() {
       if (isVertical) {
         // Vertical orientation for mobile - ворота сверху и снизу
-        paddleWidth = canvas.width * 0.3; // Широкая ракетка для мобильной версии
+        // Уменьшаем размер ракеток в 1.5 раза (0.3 / 1.5 = 0.2)
+        paddleWidth = canvas.width * 0.2; // Уменьшенная ракетка для мобильной версии
         paddleHeight = canvas.height * 0.03; // Тонкая ракетка
         ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO_MOBILE;
       } else {
@@ -727,7 +733,8 @@ window.addEventListener('load', function() {
       
       // Update control info based on mode and orientation
       if (isVertical) {
-        controlInfoEl.textContent = 'Касайтесь левой/правой части экрана для управления';
+        // В мобильной версии подсказка не отображается
+        controlInfoEl.textContent = '';
       } else {
         if (mode === 'bot') {
           controlInfoEl.textContent = 'Управление: Игрок 1 — W/S, Бот — управляется автоматически';
@@ -833,4 +840,4 @@ window.addEventListener('load', function() {
 });
 </script>
 </body>
-</html>
+</html> 

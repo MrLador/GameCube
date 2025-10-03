@@ -141,19 +141,6 @@
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
   }
-  #mobileControlsHint {
-    margin: 0.5em 0;
-    font-size: clamp(0.8rem, 3vw, 0.9em);
-    color: #bbb;
-    user-select: none;
-    text-align: center;
-    display: none;
-    padding: 0 10px;
-  }
-  
-  .mobile #mobileControlsHint {
-    display: block;
-  }
   
   /* Orientation warning for mobile */
   #orientationWarning {
@@ -250,7 +237,6 @@
 <div id="timer" aria-label="Таймер">Время: 02:00</div>
 <div id="message" role="alert" aria-live="assertive"></div>
 <div id="controlInfo" class="control-info">Выберите режим игры</div>
-<div id="mobileControlsHint">Касайтесь левой или правой части экрана для управления ракеткой</div>
 
 <script>
 // Ждем полной загрузки страницы перед инициализацией игры
@@ -270,7 +256,6 @@ window.addEventListener('load', function() {
     const score2El = document.getElementById('score2');
     const timerEl = document.getElementById('timer');
     const messageEl = document.getElementById('message');
-    const mobileHintEl = document.getElementById('mobileControlsHint');
     const controlInfoEl = document.getElementById('controlInfo');
 
     const btnPvBot = document.getElementById('btnPvBot');
@@ -530,13 +515,18 @@ window.addEventListener('load', function() {
             // Add spin based on where it hit the paddle
             let hitPos = (ballX - paddle1X) / paddleWidth - 0.5;
             ballSpeedX += hitPos * 8;
-          } else if (ballY + ballRadius > canvas.height) {
-            // Score for opponent
-            scores[1]++;
-            updateScoreboard();
-            resetBall();
           }
         }
+        
+        // Check if ball goes out of bounds at bottom (player misses)
+        if (ballY + ballRadius > canvas.height) {
+          // Score for opponent
+          scores[1]++;
+          updateScoreboard();
+          resetBall();
+          return;
+        }
+        
         // Top paddle (opponent)
         if (ballY - ballRadius <= paddle2Y + paddleHeight && ballY + ballRadius >= paddle2Y) {
           if (ballX >= paddle2X && ballX <= paddle2X + paddleWidth) {
@@ -544,12 +534,16 @@ window.addEventListener('load', function() {
             ballSpeedY = -ballSpeedY * 1.05;
             let hitPos = (ballX - paddle2X) / paddleWidth - 0.5;
             ballSpeedX += hitPos * 8;
-          } else if (ballY - ballRadius < 0) {
-            // Score for player
-            scores[0]++;
-            updateScoreboard();
-            resetBall();
           }
+        }
+        
+        // Check if ball goes out of bounds at top (opponent misses)
+        if (ballY - ballRadius < 0) {
+          // Score for player
+          scores[0]++;
+          updateScoreboard();
+          resetBall();
+          return;
         }
       } else {
         // Horizontal mode collisions
@@ -793,7 +787,6 @@ window.addEventListener('load', function() {
       
       if (isMobile) {
         document.body.classList.add('mobile');
-        mobileHintEl.textContent = 'Касайтесь левой или правой части экрана для управления ракеткой';
       }
       
       // Initial resize
@@ -824,6 +817,5 @@ window.addEventListener('load', function() {
   })();
 });
 </script>
-
 </body>
 </html>

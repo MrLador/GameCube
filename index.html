@@ -61,11 +61,11 @@
     outline: none;
   }
   
-  /* Game container - увеличен на 1.5 раза */
+  /* Game container */
   #gameWrapper {
     position: relative;
     width: 95%;
-    max-width: 2700px; /* Увеличено в 1.5 раза (1800 * 1.5) */
+    max-width: 2700px;
     margin: 0 auto;
   }
   
@@ -84,7 +84,7 @@
   #gameContainer::before {
     content: '';
     display: block;
-    padding-top: 50%; /* Сохраняем квадратное соотношение */
+    padding-top: 50%;
   }
   
   /* Mobile version */
@@ -123,13 +123,27 @@
     justify-content: center;
     align-items: center;
     width: 95%;
-    max-width: 2700px; /* Увеличено в 1.5 раза */
+    max-width: 2700px;
     gap: 20px;
   }
+  
+  /* Центрирование счета */
+  .score-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 120px;
+    text-align: center;
+    font-variant-numeric: tabular-nums; /* Одинаковая ширина цифр */
+  }
+  
   .score-divider {
     color: #eee;
     font-weight: bold;
+    min-width: 20px;
+    text-align: center;
   }
+  
   #timer {
     font-size: clamp(1rem, 4vw, 1.5em);
     font-weight: 600;
@@ -152,7 +166,7 @@
     border-radius: 8px;
     text-align: center;
     width: 95%;
-    max-width: 2700px; /* Увеличено в 1.5 раза */
+    max-width: 2700px;
     border: 1px solid #eee;
     font-size: clamp(0.9rem, 3vw, 1.1em);
   }
@@ -249,9 +263,9 @@
 </div>
 
 <div id="scoreboard" aria-label="Табло счета">
-  <div id="score1">0</div>
+  <div class="score-container" id="score1">0</div>
   <div class="score-divider">:</div>
-  <div id="score2">0</div>
+  <div class="score-container" id="score2">0</div>
 </div>
 
 <div id="timer" aria-label="Таймер">Время: 02:00</div>
@@ -288,7 +302,9 @@ window.addEventListener('load', function() {
     const BALL_RADIUS_RATIO = 0.03;
     const BALL_RADIUS_RATIO_MOBILE = 0.025;
     const PADDLE_SPEED = 420;
-    const BALL_SPEED_BASE = 360;
+    const BALL_SPEED_BASE = 180; // Уменьшена начальная скорость мяча
+    const BALL_SPEED_INCREMENT = 1.03; // Увеличение скорости после каждого отскока
+    const MAX_BALL_SPEED = 400; // Максимальная скорость мяча
     const GAME_DURATION = 120;
 
     // Colors
@@ -305,10 +321,15 @@ window.addEventListener('load', function() {
     let accumulator = 0;
     let isMobile = false;
     let isVertical = false;
+    let ballHits = 0; // Счетчик ударов по мячу
 
     // Paddle positions
     let paddle1X, paddle1Y, paddle2X, paddle2Y;
     let paddleWidth, paddleHeight, ballRadius;
+
+    // Paddle velocities for physics
+    let paddle1VelX = 0, paddle1VelY = 0, paddle2VelX = 0, paddle2VelY = 0;
+    let prevPaddle1X, prevPaddle1Y, prevPaddle2X, prevPaddle2Y;
 
     // Ball state
     let ballX, ballY;
@@ -323,7 +344,7 @@ window.addEventListener('load', function() {
     function initSizes() {
       if (isVertical) {
         // Vertical orientation for mobile
-        paddleWidth = canvas.width * 0.2; // Уменьшенная ракетка
+        paddleWidth = canvas.width * 0.2;
         paddleHeight = canvas.height * 0.03;
         ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO_MOBILE;
       } else {
@@ -338,6 +359,7 @@ window.addEventListener('load', function() {
     function resetGame() {
       scores = [0, 0];
       timer = GAME_DURATION;
+      ballHits = 0; // Сбрасываем счетчик ударов
       
       if (isVertical) {
         // Vertical layout - player at bottom, opponent at top
@@ -351,6 +373,12 @@ window.addEventListener('load', function() {
         paddle2Y = (canvas.height - paddleHeight) / 2;
       }
       
+      // Инициализируем предыдущие позиции для расчета скорости
+      prevPaddle1X = paddle1X;
+      prevPaddle1Y = paddle1Y;
+      prevPaddle2X = paddle2X;
+      prevPaddle2Y = paddle2Y;
+      
       resetBall();
       updateScoreboard();
       updateTimerDisplay();
@@ -361,6 +389,7 @@ window.addEventListener('load', function() {
     function resetBall() {
       ballX = canvas.width / 2;
       ballY = canvas.height / 2;
+      ballHits = 0; // Сбрасываем счетчик ударов при каждом новом мяче
       
       if (isVertical) {
         // Ball moves up/down in vertical mode
@@ -395,7 +424,7 @@ window.addEventListener('load', function() {
       }
     }
 
-    // Draw new paddle design with rounded corners and fill
+    // Draw paddle with rounded corners and fill
     function drawPaddle(x, y, isVertical) {
       ctx.fillStyle = COLOR_PADDLE;
       
@@ -481,6 +510,22 @@ window.addEventListener('load', function() {
       drawBall(ballX, ballY);
     }
 
+    // Calculate paddle velocities
+    function updatePaddleVelocities(delta) {
+      if (delta > 0) {
+        paddle1VelX = (paddle1X - prevPaddle1X) / delta;
+        paddle1VelY = (paddle1Y - prevPaddle1Y) / delta;
+        paddle2VelX = (paddle2X - prevPaddle2X) / delta;
+        paddle2VelY = (paddle2Y - prevPaddle2Y) / delta;
+      }
+      
+      // Store current positions for next frame
+      prevPaddle1X = paddle1X;
+      prevPaddle1Y = paddle1Y;
+      prevPaddle2X = paddle2X;
+      prevPaddle2Y = paddle2Y;
+    }
+
     // Game loop with delta time for consistent speed on all devices
     function gameLoop(timestamp) {
       if (!lastTime) lastTime = timestamp;
@@ -512,6 +557,9 @@ window.addEventListener('load', function() {
       // Move paddles based on input with delta time
       handlePaddleMovement(delta);
 
+      // Update paddle velocities for physics
+      updatePaddleVelocities(delta);
+
       // Move ball with delta time
       ballX += ballSpeedX * delta;
       ballY += ballSpeedY * delta;
@@ -533,10 +581,20 @@ window.addEventListener('load', function() {
         if (ballY + ballRadius >= paddle1Y && ballY - ballRadius <= paddle1Y + paddleHeight) {
           if (ballX >= paddle1X && ballX <= paddle1X + paddleWidth) {
             ballY = paddle1Y - ballRadius;
-            ballSpeedY = -ballSpeedY * 1.05;
-            // Add spin based on where it hit the paddle
+            
+            // Улучшенная физика: учитываем скорость ракетки
             let hitPos = (ballX - paddle1X) / paddleWidth - 0.5;
-            ballSpeedX += hitPos * 8;
+            let speedMultiplier = Math.pow(BALL_SPEED_INCREMENT, ballHits);
+            let currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+            
+            // Добавляем компонент скорости от движения ракетки
+            ballSpeedX += paddle1VelX * 0.7;
+            ballSpeedY = -Math.abs(ballSpeedY) * speedMultiplier;
+            
+            // Добавляем спин на основе позиции удара
+            ballSpeedX += hitPos * 10 * speedMultiplier;
+            
+            ballHits++;
           }
         }
         
@@ -553,9 +611,20 @@ window.addEventListener('load', function() {
         if (ballY - ballRadius <= paddle2Y + paddleHeight && ballY + ballRadius >= paddle2Y) {
           if (ballX >= paddle2X && ballX <= paddle2X + paddleWidth) {
             ballY = paddle2Y + paddleHeight + ballRadius;
-            ballSpeedY = -ballSpeedY * 1.05;
+            
+            // Улучшенная физика: учитываем скорость ракетки
             let hitPos = (ballX - paddle2X) / paddleWidth - 0.5;
-            ballSpeedX += hitPos * 8;
+            let speedMultiplier = Math.pow(BALL_SPEED_INCREMENT, ballHits);
+            let currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+            
+            // Добавляем компонент скорости от движения ракетки
+            ballSpeedX += paddle2VelX * 0.7;
+            ballSpeedY = Math.abs(ballSpeedY) * speedMultiplier;
+            
+            // Добавляем спин на основе позиции удара
+            ballSpeedX += hitPos * 10 * speedMultiplier;
+            
+            ballHits++;
           }
         }
         
@@ -584,10 +653,20 @@ window.addEventListener('load', function() {
         if (ballX - ballRadius <= 10 + paddleWidth) {
           if (ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
             ballX = 10 + paddleWidth + ballRadius;
-            ballSpeedX = -ballSpeedX * 1.05;
-            // Add spin based on where it hit the paddle
+            
+            // Улучшенная физика: учитываем скорость ракетки
             let hitPos = (ballY - paddle1Y) / paddleHeight - 0.5;
-            ballSpeedY += hitPos * 5;
+            let speedMultiplier = Math.pow(BALL_SPEED_INCREMENT, ballHits);
+            let currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+            
+            // Добавляем компонент скорости от движения ракетки
+            ballSpeedY += paddle1VelY * 0.7;
+            ballSpeedX = Math.abs(ballSpeedX) * speedMultiplier;
+            
+            // Добавляем спин на основе позиции удара
+            ballSpeedY += hitPos * 10 * speedMultiplier;
+            
+            ballHits++;
           } else if (ballX - ballRadius < 0) {
             // Score for player 2
             scores[1]++;
@@ -599,9 +678,20 @@ window.addEventListener('load', function() {
         if (ballX + ballRadius >= canvas.width - 10 - paddleWidth) {
           if (ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
             ballX = canvas.width - 10 - paddleWidth - ballRadius;
-            ballSpeedX = -ballSpeedX * 1.05;
+            
+            // Улучшенная физика: учитываем скорость ракетки
             let hitPos = (ballY - paddle2Y) / paddleHeight - 0.5;
-            ballSpeedY += hitPos * 5;
+            let speedMultiplier = Math.pow(BALL_SPEED_INCREMENT, ballHits);
+            let currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+            
+            // Добавляем компонент скорости от движения ракетки
+            ballSpeedY += paddle2VelY * 0.7;
+            ballSpeedX = -Math.abs(ballSpeedX) * speedMultiplier;
+            
+            // Добавляем спин на основе позиции удара
+            ballSpeedY += hitPos * 10 * speedMultiplier;
+            
+            ballHits++;
           } else if (ballX + ballRadius > canvas.width) {
             // Score for player 1
             scores[0]++;
@@ -611,14 +701,11 @@ window.addEventListener('load', function() {
         }
       }
 
-      // Clamp ball speed
-      const maxSpeed = 900;
-      ballSpeedX = Math.max(Math.min(ballSpeedX, maxSpeed), -maxSpeed);
-      ballSpeedY = Math.max(Math.min(ballSpeedY, maxSpeed), -maxSpeed);
-
-      // Bot AI
-      if (mode === 'bot') {
-        botMove(delta);
+      // Clamp ball speed to maximum
+      const currentBallSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+      if (currentBallSpeed > MAX_BALL_SPEED) {
+        ballSpeedX = (ballSpeedX / currentBallSpeed) * MAX_BALL_SPEED;
+        ballSpeedY = (ballSpeedY / currentBallSpeed) * MAX_BALL_SPEED;
       }
     }
 

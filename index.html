@@ -69,6 +69,7 @@
     margin: 0 auto;
   }
   
+  /* Desktop version */
   #gameContainer {
     position: relative;
     width: 100%;
@@ -79,15 +80,29 @@
     touch-action: none;
   }
   
-  /* Aspect ratio handling */
+  /* Aspect ratio handling for desktop */
   #gameContainer::before {
     content: '';
     display: block;
     padding-top: 56.25%; /* 16:9 aspect ratio */
   }
   
+  /* Mobile version - полностью вертикальная */
+  .mobile #gameWrapper {
+    width: 95%;
+    max-width: 400px;
+    height: 70vh;
+    max-height: 600px;
+  }
+  
+  .mobile #gameContainer {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+  
   .mobile #gameContainer::before {
-    padding-top: 75%; /* 4:3 aspect ratio for mobile */
+    display: none; /* Убираем псевдоэлемент для мобильной версии */
   }
   
   canvas {
@@ -301,7 +316,7 @@ window.addEventListener('load', function() {
     // Initialize sizes based on canvas size
     function initSizes() {
       if (isVertical) {
-        // Vertical orientation for mobile
+        // Vertical orientation for mobile - ворота сверху и снизу
         paddleWidth = canvas.width * 0.3; // Широкая ракетка для мобильной версии
         paddleHeight = canvas.height * 0.03; // Тонкая ракетка
         ballRadius = Math.min(canvas.width, canvas.height) * BALL_RADIUS_RATIO_MOBILE;
